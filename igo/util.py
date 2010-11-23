@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
-import mmap
 import struct
 import array
+
+try:
+    import mmap
+except:
+    mmap = None
+    import os
+    import StringIO
+    class filewrapper(file):
+        def size(self):
+            return os.fstat(self.fileno()).st_size
 
 class FileMappedInputStream:
     """
@@ -15,8 +24,12 @@ class FileMappedInputStream:
 
         @param filepath マッピングするファイルのパス
         """
-        self.f = open(filepath, 'rb')
-        self.mmap = mmap.mmap(self.f.fileno(), 0, access=mmap.ACCESS_READ)
+        if mmap:
+            self.f = open(filepath, 'rb')
+            self.mmap = mmap.mmap(self.f.fileno(), 0, access=mmap.ACCESS_READ)
+        else:
+            self.f = StringIO.StringIO()
+            self.mmap = filewrapper(filepath, 'rb')
 
     def getInt(self):
         b = self.mmap.read(4)
@@ -25,19 +38,11 @@ class FileMappedInputStream:
     def getIntArray(self, elementCount):
         ary = array.array('i')
         ary.fromstring(self.mmap.read(elementCount*4))
-        #cur = m.tell()
-        #end = cur+elementCount*4
-        #ary.fromstring(m[cur:end])
-        #m.seek(end)
         return ary
 
     def getShortArray(self, elementCount):
         ary = array.array('h')
         ary.fromstring(self.mmap.read(elementCount*2))
-        #cur = m.tell()
-        #end = cur+elementCount*2
-        #ary.fromstring(m[cur:end])
-        #m.seek(end)
         return ary
 
     def getCharArray(self, elementCount):
@@ -67,5 +72,7 @@ class FileMappedInputStream:
 	return self.mmap.size()
 
     def close(self):
-        self.mmap.close()
-        self.f.close()
+        try:
+            self.mmap.close()
+        finally:
+            self.f.close()
