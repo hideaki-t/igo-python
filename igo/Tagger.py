@@ -20,7 +20,7 @@ class Tagger:
     """
     __BOS_NODES = [ViterbiNode.makeBOSEOS()]
 
-    def __init__(self, dataDir):
+    def __init__(self, dataDir, gae=False):
         """
         バイナリ辞書を読み込んで、形態素解析器のインスタンスを作成する
 
@@ -28,18 +28,20 @@ class Tagger:
         @throws FileNotFoundException 間f違ったディレクトリが指定された場合に送出される
         @throws IOException その他の入出力エラーが発生した場合に送出される
         """
-        self.wdc = WordDic(dataDir)
-        self.unk = Unknown(dataDir)
-        self.mtx = Matrix(dataDir)
+        self.wdc = WordDic(dataDir, gae, gae)
+        self.unk = Unknown(dataDir, gae)
+        self.mtx = Matrix(dataDir, gae)
 
-    def parse(self, text, result=[]):
+    def parse(self, text, result=None):
         """
         形態素解析を行う
 
         @param text 解析対象テキスト
-        @param result 解析結果の形態素が追加されるリスト(default=[])
+        @param result 解析結果の形態素が追加されるリスト. None指定時は内部でリストを作成する
         @return 解析結果の形態素リスト. {@code parse(text,result)=result}
         """
+        if result is None:
+            result = []
         vn = self.__parseImpl(text)
         while vn:
             surface = text[vn.start:vn.start+vn.length]
@@ -52,10 +54,12 @@ class Tagger:
     分かち書きを行う
 
     @param text 分かち書きされるテキスト
-    @param result 分かち書き結果の文字列が追加されるリスト
+    @param result 分かち書き結果の文字列が追加されるリスト. None指定時は内部でリストを作成する
     @return 分かち書きされた文字列のリスト. {@code wakati(text,result)=result}
     """
-    def wakati(self, text, result=[]):
+    def wakati(self, text, result=None):
+        if result is None:
+            result = []
         vn = self.__parseImpl(text)
         while vn:
             result.append(text[vn.start:vn.start+vn.length])

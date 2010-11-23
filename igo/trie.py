@@ -91,14 +91,14 @@ class Searcher:
     """
     DoubleArray検索用のクラス
     """
-    def __init__(self, filepath):
+    def __init__(self, filepath, bigendian=False):
         """
         保存されているDoubleArrayを読み込んで、このクラスのインスタンスを作成する
 
         @param filepath DoubleArrayが保存されているファイルのパス
         @throws IOException filepathで示されるファイルの読み込みに失敗した場合に送出される
         """
-	fmis = FileMappedInputStream(filepath)
+	fmis = FileMappedInputStream(filepath, bigendian)
         try:
 	    nodeSz = fmis.getInt()
 	    tindSz = fmis.getInt()

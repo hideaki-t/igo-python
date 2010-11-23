@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import glob
 from igo.util import FileMappedInputStream
 from igo.trie import Searcher
 
@@ -29,9 +30,9 @@ class ViterbiNode(object):
 	return ViterbiNode(0, 0, 0, 0, 0, False)
 
 class CharCategory:
-    def __init__(self, dataDir):
-        self.categorys = CharCategory.readCategorys(dataDir)
-	fmis = FileMappedInputStream(dataDir + "/code2category")
+    def __init__(self, dataDir, bigendian=False):
+        self.categorys = CharCategory.readCategorys(dataDir, bigendian)
+	fmis = FileMappedInputStream(dataDir + "/code2category", bigendian)
         try:
 	    self.char2id = fmis.getIntArray(fmis.size() / 4 / 2)
 	    self.eqlMasks= fmis.getIntArray(fmis.size() / 4 / 2)
@@ -45,8 +46,8 @@ class CharCategory:
 	return (self.eqlMasks[ord(code1)] & self.eqlMasks[ord(code2)]) != 0
 
     @staticmethod
-    def readCategorys(dataDir):
-	data = FileMappedInputStream.getIntArrayS(dataDir + "/char.category")
+    def readCategorys(dataDir, bigendian):
+	data = FileMappedInputStream.getIntArrayS(dataDir + "/char.category", bigendian)
 	size = len(data) / 4
 	ary = []
         for i in range(0, size):
@@ -65,8 +66,8 @@ class Matrix:
     """
     形態素の連接コスト表を扱うクラス
     """
-    def __init__(self, dataDir):
-        fmis = FileMappedInputStream(dataDir + "/matrix.bin")
+    def __init__(self, dataDir, bigendian=False):
+        fmis = FileMappedInputStream(dataDir + "/matrix.bin", bigendian)
         try:
             self.leftSize = fmis.getInt();
             self.rightSize = fmis.getInt();
@@ -84,8 +85,8 @@ class Unknown:
     """
     未知語の検索を行うクラス
     """
-    def __init__(self, dataDir):
-	self.category = CharCategory(dataDir)
+    def __init__(self, dataDir, bigendian=False):
+	self.category = CharCategory(dataDir, bigendian)
         """文字カテゴリ管理クラス"""
 	self.spaceId = self.category.category(u' ').id  # NOTE: ' 'の文字カテゴリはSPACEに予約されている
         """文字カテゴリがSPACEの文字のID"""
@@ -113,12 +114,16 @@ class Unknown:
             wdic.searchFromTrieId(ct.id, start, length - start, isSpace, result)
 
 class WordDic:
-    def __init__(self, dataDir):
-	self.trie = Searcher(dataDir + "/word2id")
-	self.data = FileMappedInputStream.getStringS(dataDir + "/word.dat")
-	self.indices = FileMappedInputStream.getIntArrayS(dataDir + "/word.ary.idx")
+    def __init__(self, dataDir, bigendian=False, splitted=False):
+	self.trie = Searcher(dataDir + "/word2id", bigendian)
+        if splitted:
+            paths = sorted(glob.glob(dataDir + "/word.dat.*"))
+            self.data = u"".join([FileMappedInputStream.getStringS(x, bigendian) for x in paths])
+        else:
+            self.data = FileMappedInputStream.getStringS(dataDir + "/word.dat", bigendian)
+	self.indices = FileMappedInputStream.getIntArrayS(dataDir + "/word.ary.idx", bigendian)
 
-        fmis = FileMappedInputStream(dataDir + "/word.inf")
+        fmis = FileMappedInputStream(dataDir + "/word.inf", bigendian)
         wordCount = fmis.size() / (4 + 2 + 2 + 2)
         try:
             self.dataOffsets= fmis.getIntArray(wordCount)
