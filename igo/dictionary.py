@@ -3,6 +3,7 @@ import glob
 from igo.util import FileMappedInputStream
 from igo.trie import Searcher
 
+
 class ViterbiNode(object):
     """
     Viterbiアルゴリズムで使用されるノード
@@ -27,40 +28,43 @@ class ViterbiNode(object):
 
     @staticmethod
     def makeBOSEOS():
-	return ViterbiNode(0, 0, 0, 0, 0, False)
+        return ViterbiNode(0, 0, 0, 0, 0, False)
+
 
 class CharCategory:
     def __init__(self, dataDir, bigendian=False):
         self.categorys = CharCategory.readCategorys(dataDir, bigendian)
-	fmis = FileMappedInputStream(dataDir + "/code2category", bigendian)
+        fmis = FileMappedInputStream(dataDir + "/code2category", bigendian)
         try:
-	    self.char2id = fmis.getIntArray(fmis.size() / 4 / 2)
-	    self.eqlMasks= fmis.getIntArray(fmis.size() / 4 / 2)
+            self.char2id = fmis.getIntArray(fmis.size() / 4 / 2)
+            self.eqlMasks = fmis.getIntArray(fmis.size() / 4 / 2)
         finally:
-	    fmis.close()
+            fmis.close()
 
     def category(self, code):
-	return self.categorys[self.char2id[ord(code)]]
+        return self.categorys[self.char2id[ord(code)]]
 
     def isCompatible(self, code1, code2):
-	return (self.eqlMasks[ord(code1)] & self.eqlMasks[ord(code2)]) != 0
+        return (self.eqlMasks[ord(code1)] & self.eqlMasks[ord(code2)]) != 0
 
     @staticmethod
     def readCategorys(dataDir, bigendian):
-	data = FileMappedInputStream.getIntArrayS(dataDir + "/char.category", bigendian)
-	size = len(data) / 4
-	ary = []
+        data = FileMappedInputStream.getIntArrayS(dataDir + "/char.category", bigendian)
+        size = len(data) / 4
+        ary = []
         for i in range(0, size):
-	    ary.append(
+            ary.append(
                 Category(data[i * 4], data[i * 4 + 1], data[i * 4 + 2] == 1, data[i * 4 + 3] == 1))
         return ary
+
 
 class Category:
     def __init__(self, i, l, iv, g):
         self.id = i
         self.length = l
         self.invoke = iv
-        self.group  = g
+        self.group = g
+
 
 class Matrix:
     """
@@ -69,9 +73,9 @@ class Matrix:
     def __init__(self, dataDir, bigendian=False):
         fmis = FileMappedInputStream(dataDir + "/matrix.bin", bigendian)
         try:
-            self.leftSize = fmis.getInt();
-            self.rightSize = fmis.getInt();
-            self.matrix = fmis.getShortArray(self.leftSize*self.rightSize);
+            self.leftSize = fmis.getInt()
+            self.rightSize = fmis.getInt()
+            self.matrix = fmis.getShortArray(self.leftSize * self.rightSize)
         finally:
             fmis.close()
 
@@ -79,16 +83,17 @@ class Matrix:
         """
         形態素同士の連接コストを求める
         """
-	return self.matrix[rightId * self.rightSize + leftId]
+        return self.matrix[rightId * self.rightSize + leftId]
+
 
 class Unknown:
     """
     未知語の検索を行うクラス
     """
     def __init__(self, dataDir, bigendian=False):
-	self.category = CharCategory(dataDir, bigendian)
+        self.category = CharCategory(dataDir, bigendian)
         """文字カテゴリ管理クラス"""
-	self.spaceId = self.category.category(u' ').id  # NOTE: ' 'の文字カテゴリはSPACEに予約されている
+        self.spaceId = self.category.category(u' ').id  # NOTE: ' 'の文字カテゴリはSPACEに予約されている
         """文字カテゴリがSPACEの文字のID"""
 
     def search(self, text, start, wdic, result):
@@ -113,26 +118,27 @@ class Unknown:
                     return
             wdic.searchFromTrieId(ct.id, start, length - start, isSpace, result)
 
+
 class WordDic:
     def __init__(self, dataDir, bigendian=False, splitted=False):
-	self.trie = Searcher(dataDir + "/word2id", bigendian)
+        self.trie = Searcher(dataDir + "/word2id", bigendian)
         if splitted:
             paths = sorted(glob.glob(dataDir + "/word.dat.*"))
             self.data = u"".join([FileMappedInputStream.getStringS(x, bigendian) for x in paths])
         else:
             self.data = FileMappedInputStream.getStringS(dataDir + "/word.dat", bigendian)
-	self.indices = FileMappedInputStream.getIntArrayS(dataDir + "/word.ary.idx", bigendian)
+        self.indices = FileMappedInputStream.getIntArrayS(dataDir + "/word.ary.idx", bigendian)
 
         fmis = FileMappedInputStream(dataDir + "/word.inf", bigendian)
         wordCount = fmis.size() / (4 + 2 + 2 + 2)
         try:
-            self.dataOffsets= fmis.getIntArray(wordCount)
+            self.dataOffsets = fmis.getIntArray(wordCount)
             """ dataOffsets[単語ID] = 単語の素性データの開始位置 """
-            self.leftIds    = fmis.getShortArray(wordCount)
+            self.leftIds = fmis.getShortArray(wordCount)
             """ leftIds[単語ID] = 単語の左文脈ID """
-            self.rightIds   = fmis.getShortArray(wordCount)
+            self.rightIds = fmis.getShortArray(wordCount)
             """ rightIds[単語ID] = 単語の右文脈ID """
-            self.costs      = fmis.getShortArray(wordCount)
+            self.costs = fmis.getShortArray(wordCount)
             """ consts[単語ID] = 単語のコスト """
         finally:
             fmis.close()
@@ -144,17 +150,18 @@ class WordDic:
         indices = self.indices
         leftIds = self.leftIds
         rightIds = self.rightIds
+
         def collect(start, offset, trieId):
             end = indices[trieId + 1]
             for i in range(indices[trieId], end):
                 result.append(ViterbiNode(i, start, offset, self.leftIds[i], self.rightIds[i], False))
+
         self.trie.eachCommonPrefix(text, start, collect)
 
     def searchFromTrieId(self, trieId, start, wordLength, isSpace, result):
-	end = self.indices[trieId + 1]
+        end = self.indices[trieId + 1]
         for i in range(self.indices[trieId], end):
-            # check (short)wordLength
-	    result.append(ViterbiNode(i, start, wordLength, self.leftIds[i], self.rightIds[i], isSpace))
+            result.append(ViterbiNode(i, start, wordLength, self.leftIds[i], self.rightIds[i], isSpace))
 
     def wordData(self, wordId):
         return self.data[self.dataOffsets[wordId]:self.dataOffsets[wordId + 1]]

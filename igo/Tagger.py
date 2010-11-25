@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from igo.dictionary import Matrix, WordDic, Unknown, ViterbiNode
 
+
 class Morpheme:
     """
     形態素クラス
@@ -11,8 +12,9 @@ class Morpheme:
         """ 形態素の表層形 """
         self.feature = feature
         """ 形態素の素性 """
-        self.start   = start
+        self.start = start
         """ テキスト内での形態素の出現開始位置 """
+
 
 class Tagger:
     """
@@ -44,7 +46,7 @@ class Tagger:
             result = []
         vn = self.__parseImpl(text)
         while vn:
-            surface = text[vn.start:vn.start+vn.length]
+            surface = text[vn.start:vn.start + vn.length]
             feature = self.wdc.wordData(vn.wordId)
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
@@ -62,7 +64,7 @@ class Tagger:
             result = []
         vn = self.__parseImpl(text)
         while vn:
-            result.append(text[vn.start:vn.start+vn.length])
+            result.append(text[vn.start:vn.start + vn.length])
             vn = vn.prev
         return result
 
@@ -70,7 +72,7 @@ class Tagger:
         length = len(text)
         nodesAry = []
 
-	nodesAry.append(Tagger.__BOS_NODES)
+        nodesAry.append(Tagger.__BOS_NODES)
         for i in range(0, length):
             nodesAry.append([])
         for i in range(0, length):
@@ -82,9 +84,9 @@ class Tagger:
                 for j in range(0, len(perResult)):
                     vn = perResult[j]
                     if vn.isSpace:
-                        (nodesAry[i+vn.length]).extend(prevs)
+                        (nodesAry[i + vn.length]).extend(prevs)
                     else:
-                        (nodesAry[i+vn.length]).append(self.setMincostNode(vn, prevs))
+                        (nodesAry[i + vn.length]).append(self.setMincostNode(vn, prevs))
         cur = self.setMincostNode(ViterbiNode.makeBOSEOS(), nodesAry[length]).prev
 
         # reverse
@@ -102,10 +104,10 @@ class Tagger:
 
         for i in range(1, len(prevs)):
             p = prevs[i]
-	    cost = p.cost + self.mtx.linkCost(p.rightId, vn.leftId)
+            cost = p.cost + self.mtx.linkCost(p.rightId, vn.leftId)
             if cost < vn.cost:
-		vn.cost = cost
-		vn.prev = p
+                vn.cost = cost
+                vn.prev = p
 
-	vn.cost += self.wdc.cost(vn.wordId)
-	return vn
+        vn.cost += self.wdc.cost(vn.wordId)
+        return vn

@@ -2,6 +2,7 @@
 import sys
 from igo.util import FileMappedInputStream
 
+
 class Node:
     """
     DoubleArrayのノード用の定数などが定義されているクラス
@@ -18,7 +19,7 @@ class Node:
             BASEノードに格納するID値をエンコードするためのメソッド
             BASEノードに格納されているID値をデコードするためにも用いられる
             """
-            return (nid * -1) -1
+            return (-nid) - 1
 
     class Chck:
         """
@@ -44,6 +45,7 @@ class Node:
         使用可能な文字の最大値
         """
 
+
 class KeyStream:
     """
     文字列を文字のストリームとして扱うためのクラス。
@@ -52,13 +54,13 @@ class KeyStream:
     """
 
     def __init__(self, key, start=0):
-	self.s = key
-	self.cur = start
+        self.s = key
+        self.cur = start
         self.len = len(key)
 
     @staticmethod
     def compare(ks1, ks2):
-	return cmp(ks1.rest(), ks2.rest())
+        return cmp(ks1.rest(), ks2.rest())
 
     def startsWith(self, prefix, beg, length):
         """
@@ -98,19 +100,19 @@ class Searcher:
         @param filepath DoubleArrayが保存されているファイルのパス
         @throws IOException filepathで示されるファイルの読み込みに失敗した場合に送出される
         """
-	fmis = FileMappedInputStream(filepath, bigendian)
+        fmis = FileMappedInputStream(filepath, bigendian)
         try:
-	    nodeSz = fmis.getInt()
-	    tindSz = fmis.getInt()
-	    tailSz = fmis.getInt()
-	    self.keySetSize = tindSz
-	    self.begs = fmis.getIntArray(tindSz)
-	    self.base = fmis.getIntArray(nodeSz)
-	    self.lens = fmis.getShortArray(tindSz)
-	    self.chck = fmis.getCharArray(nodeSz)
-	    self.tail = fmis.getString(tailSz)
+            nodeSz = fmis.getInt()
+            tindSz = fmis.getInt()
+            tailSz = fmis.getInt()
+            self.keySetSize = tindSz
+            self.begs = fmis.getIntArray(tindSz)
+            self.base = fmis.getIntArray(nodeSz)
+            self.lens = fmis.getShortArray(tindSz)
+            self.chck = fmis.getCharArray(nodeSz)
+            self.tail = fmis.getString(tailSz)
         except:
-	    fmis.close()
+            fmis.close()
 
     def size(self):
         """
@@ -118,7 +120,6 @@ class Searcher:
         @return DoubleArrayに格納されているキー数
         """
         return self.keySetSize
-
 
     def search(self, key):
         """
@@ -129,11 +130,11 @@ class Searcher:
         """
         base = self.base
         chck = self.chck
-	node = base[0]
-	kin = KeyStream(key)
+        node = base[0]
+        kin = KeyStream(key)
         while 1:
             idx = node + code
-	    node = base[idx]
+            node = base[idx]
             if chck[idx] == code:
                 if node >= 0:
                     continue
@@ -160,7 +161,7 @@ class Searcher:
         while 1:
             code = kin.read()
             offset += 1
-            terminalIdx = node# + Node.Chck.TERMINATE_CODE
+            terminalIdx = node
             if chck[terminalIdx] == Node.Chck.TERMINATE_CODE:
                 fn(start, offset, Node.Base.ID(base[terminalIdx]))
                 if code == Node.Chck.TERMINATE_CODE:
@@ -175,12 +176,12 @@ class Searcher:
             return
 
     def call_if_keyIncluding(self, kin, node, start, offset, fn):
-	nodeId = Node.Base.ID(node)
+        nodeId = Node.Base.ID(node)
         if kin.startsWith(self.tail, self.begs[nodeId], self.lens[nodeId]):
             fn(start, offset + self.lens[nodeId] + 1, nodeId)
 
     def keyExists(self, kin, node):
-	nodeId  = Node.Base.ID(node)
+        nodeId = Node.Base.ID(node)
         beg = self.begs[nodeId]
-	s = self.tail.substring(beg, beg + self.lens[nodeId])
-	return kin.rest().equals(s)
+        s = self.tail.substring(beg, beg + self.lens[nodeId])
+        return kin.rest().equals(s)

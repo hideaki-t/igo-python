@@ -8,6 +8,7 @@ except:
     mmap = None
     import os
     import StringIO
+
     class filewrapper(file):
         def size(self):
             return os.fstat(self.fileno()).st_size
@@ -26,6 +27,7 @@ class FileMappedInputStream:
     @staticmethod
     def nop(a):
         pass
+
     @staticmethod
     def swap(a):
         a.byteswap()
@@ -60,19 +62,19 @@ class FileMappedInputStream:
 
     def getIntArray(self, elementCount):
         ary = array.array('i')
-        ary.fromstring(self.mmap.read(elementCount*4))
+        ary.fromstring(self.mmap.read(elementCount * 4))
         self.byteswap(ary)
         return ary
 
     def getShortArray(self, elementCount):
         ary = array.array('h')
-        ary.fromstring(self.mmap.read(elementCount*2))
+        ary.fromstring(self.mmap.read(elementCount * 2))
         self.byteswap(ary)
         return ary
 
     def getCharArray(self, elementCount):
         # srcformat is UTF-16
-        return self.mmap.read(elementCount*2).decode(self.char_encoding)
+        return self.mmap.read(elementCount * 2).decode(self.char_encoding)
 
     def getString(self, elementCount):
         return self.getCharArray(elementCount)
@@ -81,7 +83,7 @@ class FileMappedInputStream:
     def getIntArrayS(filepath, bigendian=False):
         fmis = FileMappedInputStream(filepath, bigendian)
         try:
-            return fmis.getIntArray(fmis.size()/4)
+            return fmis.getIntArray(fmis.size() / 4)
         finally:
             fmis.close()
 
@@ -89,12 +91,12 @@ class FileMappedInputStream:
     def getStringS(filepath, bigendian=False):
         fmis = FileMappedInputStream(filepath, bigendian)
         try:
-            return fmis.getString(fmis.size()/2)
+            return fmis.getString(fmis.size() / 2)
         finally:
             fmis.close()
 
     def size(self):
-	return self.mmap.size()
+        return self.mmap.size()
 
     def close(self):
         try:
