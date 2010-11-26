@@ -13,7 +13,7 @@ except:
         def size(self):
             if hasattr(os, 'fstat'):
                 return os.fstat(self.fileno()).st_size
-            else
+            else:
                 return os.stat(self.name).st_size
 
 
