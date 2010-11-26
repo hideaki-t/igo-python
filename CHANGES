@@ -4,5 +4,8 @@ Changelog for Igo-Python
 2010-11-25 -- 0.1
     * first release.
 
-2010-11-25 -- 0.1a
+2010-11-27 -- 0.1a
     * update package info only.
+
+2010-11-27 -- 0.2
+    * support Google App Engine(maybe)
