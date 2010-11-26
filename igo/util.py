@@ -11,7 +11,10 @@ except:
 
     class filewrapper(file):
         def size(self):
-            return os.fstat(self.fileno()).st_size
+            if hasattr(os, 'fstat'):
+                return os.fstat(self.fileno()).st_size
+            else
+                return os.stat(self.name).st_size
 
 
 class FileMappedInputStream:
