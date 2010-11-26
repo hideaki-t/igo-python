@@ -1,0 +1,13 @@
+CHANGES
+COPYING
+README
+setup.py
+igo/Tagger.py
+igo/__init__.py
+igo/dictionary.py
+igo/trie.py
+igo/util.py
+igo_python.egg-info/PKG-INFO
+igo_python.egg-info/SOURCES.txt
+igo_python.egg-info/dependency_links.txt
+igo_python.egg-info/top_level.txt
