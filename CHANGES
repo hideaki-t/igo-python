@@ -14,3 +14,5 @@ Changelog for Igo-Python
     * drop mmap related code
     * reduce memory footprint
 
+2010-11-28 -- 0.3a
+    * fix bugs(if a phrase ends with 'た' will causes error)

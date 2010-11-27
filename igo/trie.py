@@ -26,16 +26,19 @@ class Node:
         CHECKノード用の定数が定義されているクラス
         """
         TERMINATE_CODE = 0
-
         """
-        文字列の終端を表す文字定数
+        文字列の終端を表す文字コード
 
         この文字はシステムにより予約されており、辞書内の形態素の表層形および解析対象テキストに含まれていた場合の動作は未定義
+        """
+        TERMINATE_CHAR = chr(TERMINATE_CODE)
+        """
+        文字列の終端を表す文字定数
         """
 
         VACANT_CODE = 1
         """
-        CHECKノードが未使用だということを示すための文字定数
+        CHECKノードが未使用だということを示すための文字コード
 
         この文字はシステムにより予約されており、辞書内の形態素の表層形および解析対象テキストに含まれていた場合の動作は未定義
         """
@@ -79,7 +82,7 @@ class KeyStream:
 
     def read(self):
         if self.eos():
-            return Node.Chck.TERMINATE_CODE
+            return chr(Node.Chck.TERMINATE_CODE)
         else:
             p = self.cur
             self.cur += 1
@@ -164,7 +167,7 @@ class Searcher:
             terminalIdx = node
             if chck[terminalIdx] == Node.Chck.TERMINATE_CODE:
                 fn(start, offset, Node.Base.ID(base[terminalIdx]))
-                if code == Node.Chck.TERMINATE_CODE:
+                if code == Node.Chck.TERMINATE_CHAR:
                     return
             code = ord(code)
             idx = node + code
