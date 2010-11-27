@@ -9,3 +9,8 @@ Changelog for Igo-Python
 
 2010-11-27 -- 0.2
     * support Google App Engine(maybe)
+
+2010-11-27 -- 0.3
+    * drop mmap related code
+    * reduce memory footprint
+

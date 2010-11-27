@@ -25,7 +25,7 @@ class Node:
         """
         CHECKノード用の定数が定義されているクラス
         """
-        TERMINATE_CODE = chr(0)
+        TERMINATE_CODE = 0
 
         """
         文字列の終端を表す文字定数
@@ -111,7 +111,7 @@ class Searcher:
             self.lens = fmis.getShortArray(tindSz)
             self.chck = fmis.getCharArray(nodeSz)
             self.tail = fmis.getString(tailSz)
-        except:
+        finally:
             fmis.close()
 
     def size(self):
@@ -166,7 +166,8 @@ class Searcher:
                 fn(start, offset, Node.Base.ID(base[terminalIdx]))
                 if code == Node.Chck.TERMINATE_CODE:
                     return
-            idx = node + ord(code)
+            code = ord(code)
+            idx = node + code
             node = base[idx]
             if chck[idx] == code:
                 if node >= 0:

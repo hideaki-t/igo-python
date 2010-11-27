@@ -1,20 +1,25 @@
 # -*- coding: utf-8 -*-
-import struct
 import array
+import codecs
+import os
+import struct
 
-try:
-    import mmap
-except:
-    mmap = None
-    import os
-    import StringIO
 
-    class filewrapper(file):
-        def size(self):
-            if hasattr(os, 'fstat'):
-                return os.fstat(self.fileno()).st_size
-            else:
-                return os.stat(self.name).st_size
+if hasattr(os, 'fstat'):
+
+    def size(f):
+        return os.fstat(f.fileno()).st_size
+else:
+
+    def size(f):
+        return os.stat(f.name).st_size
+
+littleendian = struct.pack('@i', 1)[0] == '\x01'
+
+
+class filewrapper(file):
+    def size(self):
+        return size(self)
 
 
 class FileMappedInputStream:
@@ -45,64 +50,71 @@ class FileMappedInputStream:
         if bigendian:
             self.int_fmt = '!i'
             self.short_fmt = '!h'
-            self.byteswap = self.swap
+            self.byteswap = self.swap if littleendian and bigendian else self.nop
             self.char_encoding = 'UTF-16-BE'
         else:
             self.int_fmt = '@i'
             self.short_fmt = '@h'
             self.byteswap = self.nop
-            self.char_encoding = 'UTF-16'
-        if mmap:
-            self.f = open(filepath, 'rb')
-            self.mmap = mmap.mmap(self.f.fileno(), 0, access=mmap.ACCESS_READ)
-        else:
-            self.f = StringIO.StringIO()
-            self.mmap = filewrapper(filepath, 'rb')
+            self.char_encoding = 'UTF-16-LE' if littleendian else 'UTF-16-BE'
+        self.f = filewrapper(filepath, 'rb')
 
     def getInt(self):
-        b = self.mmap.read(4)
+        b = self.f.read(4)
         return struct.unpack(self.int_fmt, b)[0]
 
     def getIntArray(self, elementCount):
         ary = array.array('i')
-        ary.fromstring(self.mmap.read(elementCount * 4))
+        ary.fromfile(self.f, elementCount)
         self.byteswap(ary)
         return ary
 
     def getShortArray(self, elementCount):
         ary = array.array('h')
-        ary.fromstring(self.mmap.read(elementCount * 2))
+        ary.fromfile(self.f, elementCount)
         self.byteswap(ary)
         return ary
 
     def getCharArray(self, elementCount):
-        # srcformat is UTF-16
-        return self.mmap.read(elementCount * 2).decode(self.char_encoding)
+        ary = array.array('H')
+        ary.fromfile(self.f, elementCount)
+        self.byteswap(ary)
+        return ary
 
     def getString(self, elementCount):
-        return self.getCharArray(elementCount)
-
-    @staticmethod
-    def getIntArrayS(filepath, bigendian=False):
-        fmis = FileMappedInputStream(filepath, bigendian)
-        try:
-            return fmis.getIntArray(fmis.size() / 4)
-        finally:
-            fmis.close()
-
-    @staticmethod
-    def getStringS(filepath, bigendian=False):
-        fmis = FileMappedInputStream(filepath, bigendian)
-        try:
-            return fmis.getString(fmis.size() / 2)
-        finally:
-            fmis.close()
+        return codecs.getreader(self.char_encoding)(self.f).read(elementCount)
 
     def size(self):
-        return self.mmap.size()
+        return self.f.size()
 
     def close(self):
+        self.f.close()
+
+
+def getIntArray(filepath, bigendian=False):
+    fmis = FileMappedInputStream(filepath, bigendian)
+    try:
+        return fmis.getIntArray(fmis.size() / 4)
+    finally:
+        fmis.close()
+
+
+def getCharArray(filepath, bigendian=False):
+    fmis = FileMappedInputStream(filepath, bigendian)
+    try:
+        return fmis.getCharArray(fmis.size() / 2)
+    finally:
+        fmis.close()
+
+
+def getCharArrayMulti(filepaths, bigendian=False):
+    ary = array.array('H')
+    for path in filepaths:
+        f = open(path, 'rb')
         try:
-            self.mmap.close()
+            ary.fromfile(f, size(f) / 2)
         finally:
-            self.f.close()
+            f.close()
+    if littleendian and bigendian:
+        ary.byteswap()
+    return ary

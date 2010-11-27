@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import glob
+import igo.util as util
 from igo.util import FileMappedInputStream
 from igo.trie import Searcher
 
@@ -49,7 +50,7 @@ class CharCategory:
 
     @staticmethod
     def readCategorys(dataDir, bigendian):
-        data = FileMappedInputStream.getIntArrayS(dataDir + "/char.category", bigendian)
+        data = util.getIntArray(dataDir + "/char.category", bigendian)
         size = len(data) / 4
         ary = []
         for i in range(0, size):
@@ -124,14 +125,14 @@ class WordDic:
         self.trie = Searcher(dataDir + "/word2id", bigendian)
         if splitted:
             paths = sorted(glob.glob(dataDir + "/word.dat.*"))
-            self.data = u"".join([FileMappedInputStream.getStringS(x, bigendian) for x in paths])
+            self.data = util.getCharArrayMulti(paths, bigendian)
         else:
-            self.data = FileMappedInputStream.getStringS(dataDir + "/word.dat", bigendian)
-        self.indices = FileMappedInputStream.getIntArrayS(dataDir + "/word.ary.idx", bigendian)
+            self.data = util.getCharArray(dataDir + "/word.dat", bigendian)
+        self.indices = util.getIntArray(dataDir + "/word.ary.idx", bigendian)
 
         fmis = FileMappedInputStream(dataDir + "/word.inf", bigendian)
-        wordCount = fmis.size() / (4 + 2 + 2 + 2)
         try:
+            wordCount = fmis.size() / (4 + 2 + 2 + 2)
             self.dataOffsets = fmis.getIntArray(wordCount)
             """ dataOffsets[単語ID] = 単語の素性データの開始位置 """
             self.leftIds = fmis.getShortArray(wordCount)

@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: igo-python
-Version: 0.2
+Version: 0.3
 Summary: Python port of Igo Japanese morphological analyzer
 Home-page: https://launchpad.net/igo-python/
 Author: Hideaki Takahashi
@@ -57,6 +57,11 @@ Description: ================
         
         2010-11-27 -- 0.2
             * support Google App Engine(maybe)
+        
+        2010-11-27 -- 0.3
+            * drop mmap related code
+            * reduce memory footprint
+        
         
 Keywords: japanese,morphological analyzer
 Platform: UNKNOWN

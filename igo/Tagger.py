@@ -47,7 +47,7 @@ class Tagger:
         vn = self.__parseImpl(text)
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = self.wdc.wordData(vn.wordId)
+            feature = u''.join([unichr(x) for x in self.wdc.wordData(vn.wordId)])
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result
