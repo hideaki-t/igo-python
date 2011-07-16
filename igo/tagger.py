@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from igo.dictionary import Matrix, WordDic, Unknown, ViterbiNode
+import os.path
+from os.path import dirname, abspath
 
 
 class Morpheme:
@@ -22,7 +24,18 @@ class Tagger:
     """
     __BOS_NODES = [ViterbiNode.makeBOSEOS()]
 
-    def __init__(self, dataDir, gae=False):
+    @staticmethod
+    def lookup():
+        """
+        モジュールが置いてある場所から辞書を探す
+        @return: モジュール内で見つかった辞書のパス
+        """
+        path = os.path.join(abspath(dirname(__file__)), 'dic')
+        if (os.path.exists(path)):
+            return path
+        return None
+
+    def __init__(self, dataDir=None, gae=False):
         """
         バイナリ辞書を読み込んで、形態素解析器のインスタンスを作成する
 
@@ -30,6 +43,8 @@ class Tagger:
         @throws FileNotFoundException 間f違ったディレクトリが指定された場合に送出される
         @throws IOException その他の入出力エラーが発生した場合に送出される
         """
+        if not dataDir:
+            dataDir = Tagger.lookup()
         self.wdc = WordDic(dataDir, gae, gae)
         self.unk = Unknown(dataDir, gae)
         self.mtx = Matrix(dataDir, gae)
