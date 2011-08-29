@@ -1,10 +1,8 @@
-CHANGES
-COPYING
 README
 setup.py
-igo/Tagger.py
 igo/__init__.py
 igo/dictionary.py
+igo/tagger.py
 igo/trie.py
 igo/util.py
 igo_python.egg-info/PKG-INFO

@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name='igo-python',
-    version='0.3a',
+    version='0.4',
     description='Python port of Igo Japanese morphological analyzer',
     long_description = open('README').read() + "\n\n" + open('CHANGES').read(),
     author='Hideaki Takahashi',
@@ -22,6 +22,7 @@ setup(
                  'Programming Language :: Python :: 2',
                  'Programming Language :: Python :: 2.5',
                  'Programming Language :: Python :: 2.6',
+                 'Programming Language :: Python :: 2.7',
                  'Topic :: Scientific/Engineering :: Information Analysis',
                  'Topic :: Software Development :: Libraries :: Python Modules',
                  'Topic :: Text Processing :: Linguistic',
