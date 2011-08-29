@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 import glob
 import igo.util as util
 from igo.util import FileMappedInputStream
@@ -37,8 +38,8 @@ class CharCategory:
         self.categorys = CharCategory.readCategorys(dataDir, bigendian)
         fmis = FileMappedInputStream(dataDir + "/code2category", bigendian)
         try:
-            self.char2id = fmis.getIntArray(fmis.size() / 4 / 2)
-            self.eqlMasks = fmis.getIntArray(fmis.size() / 4 / 2)
+            self.char2id = fmis.getIntArray(fmis.size() // 4 // 2)
+            self.eqlMasks = fmis.getIntArray(fmis.size() // 4 // 2)
         finally:
             fmis.close()
 
@@ -51,7 +52,7 @@ class CharCategory:
     @staticmethod
     def readCategorys(dataDir, bigendian):
         data = util.getIntArray(dataDir + "/char.category", bigendian)
-        size = len(data) / 4
+        size = len(data) // 4
         ary = []
         for i in range(0, size):
             ary.append(
@@ -85,7 +86,7 @@ class Matrix:
         形態素同士の連接コストを求める
         """
         return self.matrix[rightId * self.rightSize + leftId]
-
+    
 
 class Unknown:
     """
@@ -132,7 +133,7 @@ class WordDic:
 
         fmis = FileMappedInputStream(dataDir + "/word.inf", bigendian)
         try:
-            wordCount = fmis.size() / (4 + 2 + 2 + 2)
+            wordCount = fmis.size() // (4 + 2 + 2 + 2)
             self.dataOffsets = fmis.getIntArray(wordCount)
             """ dataOffsets[単語ID] = 単語の素性データの開始位置 """
             self.leftIds = fmis.getShortArray(wordCount)

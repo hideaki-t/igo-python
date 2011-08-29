@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 import array
 import codecs
 import os
 import struct
-
 
 if hasattr(os, 'fstat'):
 
@@ -94,7 +94,7 @@ class FileMappedInputStream:
 def getIntArray(filepath, bigendian=False):
     fmis = FileMappedInputStream(filepath, bigendian)
     try:
-        return fmis.getIntArray(fmis.size() / 4)
+        return fmis.getIntArray(fmis.size() // 4)
     finally:
         fmis.close()
 
@@ -102,7 +102,7 @@ def getIntArray(filepath, bigendian=False):
 def getCharArray(filepath, bigendian=False):
     fmis = FileMappedInputStream(filepath, bigendian)
     try:
-        return fmis.getCharArray(fmis.size() / 2)
+        return fmis.getCharArray(fmis.size() // 2)
     finally:
         fmis.close()
 
@@ -112,7 +112,7 @@ def getCharArrayMulti(filepaths, bigendian=False):
     for path in filepaths:
         f = open(path, 'rb')
         try:
-            ary.fromfile(f, size(f) / 2)
+            ary.fromfile(f, size(f) // 2)
         finally:
             f.close()
     if littleendian and bigendian:
