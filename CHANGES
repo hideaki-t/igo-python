@@ -19,3 +19,8 @@ Changelog for Igo-Python
 
 2011-08-29 -- 0.4
     * add some enhances and clean up.
+
+2011-09-01 -- 0.9
+    * compatibility with python3.2
+    * update the code base to igo-0.4.3
+    * add some enhances and clean up.

@@ -12,12 +12,13 @@ if sys.version_info[0] > 2:
 else:
     space = unichr(0x20)
 
+
 class ViterbiNode(object):
     """
     Viterbiアルゴリズムで使用されるノード
     """
-    def __init__(self, wordId, start, length, leftId, rightId, isSpace):
-        self.cost = 0
+    def __init__(self, wordId, start, length, cost, leftId, rightId, isSpace):
+        self.cost = cost
         """ 始点からノードまでの総コスト """
         self.prev = None
         """ コスト最小の前方のノードへのリンク """
@@ -36,7 +37,7 @@ class ViterbiNode(object):
 
     @staticmethod
     def makeBOSEOS():
-        return ViterbiNode(0, 0, 0, 0, 0, False)
+        return ViterbiNode(0, 0, 0, 0, 0, 0, False)
 
 
 class CharCategory:
@@ -61,8 +62,8 @@ class CharCategory:
         size = len(data) // 4
         ary = []
         for i in range(0, size):
-            ary.append(
-                Category(data[i * 4], data[i * 4 + 1], data[i * 4 + 2] == 1, data[i * 4 + 3] == 1))
+            ary.append(Category(data[i * 4], data[i * 4 + 1],
+                                data[i * 4 + 2] == 1, data[i * 4 + 3] == 1))
         return ary
 
 
@@ -101,30 +102,35 @@ class Unknown:
     def __init__(self, dataDir, bigendian=False):
         self.category = CharCategory(dataDir, bigendian)
         """文字カテゴリ管理クラス"""
-        self.spaceId = self.category.category(space).id  # NOTE: ' 'の文字カテゴリはSPACEに予約されている
+        # NOTE: ' 'の文字カテゴリはSPACEに予約されている
+        self.spaceId = self.category.category(space).id
         """文字カテゴリがSPACEの文字のID"""
 
-    def search(self, text, start, wdic, result):
+    def search(self, text, start, wdic, callback):
+        category = self.category
         ch = text[start]
-        ct = self.category.category(ch)
+        ct = category.category(ch)
         length = len(text)
 
-        if result and not ct.invoke:
+        if not callback.isEmpty() and not ct.invoke:
             return
 
         isSpace = ct.id == self.spaceId
         limit = min(length, ct.length + start)
         for i in range(start, limit):
-            wdic.searchFromTrieId(ct.id, start, (i - start) + 1, isSpace, result)
-            if i + 1 != limit and not self.category.isCompatible(ch, text[i + 1]):
+            wdic.searchFromTrieId(ct.id, start,
+                                  (i - start) + 1, isSpace, callback)
+            if i + 1 != limit and not category.isCompatible(ch, text[i + 1]):
                 return
 
         if ct.group and limit < length:
             for i in range(limit, length):
-                if not self.category.isCompatible(ch, text[i]):
-                    wdic.searchFromTrieId(ct.id, start, i - start, isSpace, result)
+                if not category.isCompatible(ch, text[i]):
+                    wdic.searchFromTrieId(ct.id, start,
+                                          i - start, isSpace, callback)
                     return
-            wdic.searchFromTrieId(ct.id, start, length - start, isSpace, result)
+            wdic.searchFromTrieId(ct.id, start,
+                                  length - start, isSpace, callback)
 
 
 class WordDic:
@@ -151,25 +157,28 @@ class WordDic:
         finally:
             fmis.close()
 
-    def cost(self, wordId):
-        return self.costs[wordId]
-
-    def search(self, text, start, result):
-        indices = self.indices
+    def search(self, text, start, callback):
+        costs = self.costs
         leftIds = self.leftIds
         rightIds = self.rightIds
+        indices = self.indices
 
-        def collect(start, offset, trieId):
+        def fn(start, offset, trieId):
             end = indices[trieId + 1]
             for i in range(indices[trieId], end):
-                result.append(ViterbiNode(i, start, offset, self.leftIds[i], self.rightIds[i], False))
+                callback(ViterbiNode(i, start, offset, costs[i],
+                                     leftIds[i], rightIds[i], False))
 
-        self.trie.eachCommonPrefix(text, start, collect)
+        self.trie.eachCommonPrefix(text, start, fn)
 
-    def searchFromTrieId(self, trieId, start, wordLength, isSpace, result):
+    def searchFromTrieId(self, trieId, start, wordLength, isSpace, callback):
+        costs = self.costs
+        leftIds = self.leftIds
+        rightIds = self.rightIds
         end = self.indices[trieId + 1]
         for i in range(self.indices[trieId], end):
-            result.append(ViterbiNode(i, start, wordLength, self.leftIds[i], self.rightIds[i], isSpace))
+            callback(ViterbiNode(i, start, wordLength, costs[i],
+                                 leftIds[i], rightIds[i], isSpace))
 
     def wordData(self, wordId):
         return self.data[self.dataOffsets[wordId]:self.dataOffsets[wordId + 1]]

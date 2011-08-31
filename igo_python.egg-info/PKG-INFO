@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: igo-python
-Version: 0.4
+Version: 0.9
 Summary: Python port of Igo Japanese morphological analyzer
 Home-page: https://launchpad.net/igo-python/
 Author: Hideaki Takahashi
@@ -68,6 +68,11 @@ Description: ================
         2011-08-29 -- 0.4
             * add some enhances and clean up.
         
+        2011-09-01 -- 0.9
+            * compatibility with python3.2
+            * update the code base to igo-0.4.3
+            * add some enhances and clean up.
+        
 Keywords: japanese,morphological analyzer
 Platform: UNKNOWN
 Classifier: Development Status :: 4 - Beta
@@ -77,10 +82,10 @@ Classifier: Natural Language :: Japanese
 Classifier: Operating System :: OS Independent
 Classifier: Operating System :: Microsoft :: Windows
 Classifier: Operating System :: POSIX :: Linux
-Classifier: Programming Language :: Python :: 2
 Classifier: Programming Language :: Python :: 2.5
 Classifier: Programming Language :: Python :: 2.6
 Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.2
 Classifier: Topic :: Scientific/Engineering :: Information Analysis
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Classifier: Topic :: Text Processing :: Linguistic

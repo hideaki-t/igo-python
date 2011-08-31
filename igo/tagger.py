@@ -11,6 +11,7 @@ if sys.version_info[0] > 2:
 else:
     empty = unicode('')
 
+
 class Morpheme:
     """
     形態素クラス
@@ -67,9 +68,10 @@ class Tagger:
         if result is None:
             result = []
         vn = self.__parseImpl(text)
+        wordData = self.wdc.wordData
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = ''.join([unichr(x) for x in self.wdc.wordData(vn.wordId)])
+            feature = ''.join([unichr(x) for x in wordData(vn.wordId)])
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result
@@ -93,23 +95,21 @@ class Tagger:
     def __parseImpl(self, text):
         length = len(text)
         nodesAry = []
-
         nodesAry.append(Tagger.__BOS_NODES)
         for i in range(0, length):
             nodesAry.append([])
+
+        wdc = self.wdc
+        unk = self.unk
+        fn = MakeLattice(nodesAry, self.setMincostNode)
         for i in range(0, length):
-            perResult = []
             if len(nodesAry[i]):
-                self.wdc.search(text, i, perResult)       # 単語辞書から形態素を検索
-                self.unk.search(text, i, self.wdc, perResult)  # 未知語辞書から形態素を検索
-                prevs = nodesAry[i]
-                for j in range(0, len(perResult)):
-                    vn = perResult[j]
-                    if vn.isSpace:
-                        (nodesAry[i + vn.length]).extend(prevs)
-                    else:
-                        (nodesAry[i + vn.length]).append(self.setMincostNode(vn, prevs))
-        cur = self.setMincostNode(ViterbiNode.makeBOSEOS(), nodesAry[length]).prev
+                fn.set(i)
+                wdc.search(text, i, fn)       # 単語辞書から形態素を検索
+                unk.search(text, i, wdc, fn)  # 未知語辞書から形態素を検索
+
+        cur = self.setMincostNode(ViterbiNode.makeBOSEOS(),
+                                  nodesAry[length]).prev
 
         # reverse
         head = None
@@ -121,15 +121,42 @@ class Tagger:
         return head
 
     def setMincostNode(self, vn, prevs):
+        mtx = self.mtx
+        leftId = vn.leftId
         f = vn.prev = prevs[0]
-        vn.cost = f.cost + self.mtx.linkCost(f.rightId, vn.leftId)
+        minCost = f.cost + mtx.linkCost(f.rightId, leftId)
 
         for i in range(1, len(prevs)):
             p = prevs[i]
-            cost = p.cost + self.mtx.linkCost(p.rightId, vn.leftId)
-            if cost < vn.cost:
-                vn.cost = cost
+            cost = p.cost + mtx.linkCost(p.rightId, leftId)
+            if cost < minCost:
+                minCost = cost
                 vn.prev = p
 
-        vn.cost += self.wdc.cost(vn.wordId)
+        vn.cost += minCost
         return vn
+
+
+class MakeLattice:
+    def __init__(self, nodesAry, setMincostNode):
+        self.nodesAry = nodesAry
+        self.i = 0
+        self.prevs = None
+        self.empty = True
+        self.setMincostNode = setMincostNode
+
+    def set(self, i):
+        self.i = i
+        self.prevs = self.nodesAry[i]
+        self.empty = True
+
+    def __call__(self, vn):
+        self.empty = False
+        t = self.nodesAry[self.i + vn.length]
+        if vn.isSpace:
+            t.extend(self.prevs)
+        else:
+            t.append(self.setMincostNode(vn, self.prevs))
+
+    def isEmpty(self):
+        return self.empty

@@ -17,12 +17,12 @@ else:
     def size(f):
         return os.stat(f.name).st_size
 
+
 class FileMappedInputStream:
     """
     ファイルにマッピングされた入力ストリーム<br />
     igo以下のモジュールではファイルからバイナリデータを取得する場合、必ずこのクラスが使用される
     """
-
 
     @staticmethod
     def nop(a):

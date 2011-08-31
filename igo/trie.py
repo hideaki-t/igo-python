@@ -3,6 +3,10 @@ import sys
 from igo.util import FileMappedInputStream
 
 
+if sys.version_info[0] > 2:
+    unichr = chr
+
+
 class Node:
     """
     DoubleArrayのノード用の定数などが定義されているクラス
@@ -28,7 +32,7 @@ class Node:
 
         この文字はシステムにより予約されており、辞書内の形態素の表層形および解析対象テキストに含まれていた場合の動作は未定義
         """
-        TERMINATE_CHAR = chr(TERMINATE_CODE)
+        TERMINATE_CHAR = unichr(TERMINATE_CODE)
         """
         文字列の終端を表す文字定数
         """
@@ -49,7 +53,7 @@ class Node:
 class KeyStream:
     """
     文字列を文字のストリームとして扱うためのクラス。
-    readメソッドで個々の文字を順に読み込み、文字列の終端に達した場合には{@code Node.Chck.TERMINATE_CODE}が返される。
+    readメソッドで個々の文字を順に読み込み、文字列の終端に達した場合には{@code Node.Chck.TERMINATE_CHAR}が返される。
     * XXX: クラス名は不適切
     """
 
@@ -63,23 +67,19 @@ class KeyStream:
         return cmp(ks1.rest(), ks2.rest())
 
     def startsWith(self, prefix, beg, length):
-        """
-        このメソッドは動作的には、{@code rest().startsWith(prefix.substring(beg, len))}、と等価。
-        ほんの若干だが、パフォーマンスを改善するために導入。
-        簡潔性のためになくしても良いかもしれない。
-        """
+        cur = self.cur
         s = self.s
-        c = self.cur
-        if self.len - c < length:
+
+        if self.len - cur < length:
             return False
-        return s[c:].startswith(prefix[beg:length])
+        return self.s[cur:cur + length] == prefix[beg:beg + length]
 
     def rest(self):
         return self.s[self.cur:]
 
     def read(self):
         if self.eos():
-            return chr(Node.Chck.TERMINATE_CODE)
+            return Node.Chck.TERMINATE_CHAR
         else:
             p = self.cur
             self.cur += 1
@@ -130,15 +130,18 @@ class Searcher:
         """
         base = self.base
         chck = self.chck
+        keyExists = self.keyExists
+
         node = base[0]
         kin = KeyStream(key)
+        code = kin.read()
         while 1:
             idx = node + code
             node = base[idx]
             if chck[idx] == code:
                 if node >= 0:
                     continue
-                elif kin.eos() or self.keyExists(kin, node):
+                elif kin.eos() or keyExists(kin, node):
                     return Node.Base.ID(node)
             return -1
 
@@ -159,14 +162,13 @@ class Searcher:
         kin = KeyStream(key, start)
 
         while 1:
-            code = kin.read()
+            code = ord(kin.read())
             offset += 1
-            terminalIdx = node
+            terminalIdx = node + Node.Chck.TERMINATE_CODE
             if chck[terminalIdx] == Node.Chck.TERMINATE_CODE:
                 fn(start, offset, Node.Base.ID(base[terminalIdx]))
-                if code == Node.Chck.TERMINATE_CHAR:
+                if code == Node.Chck.TERMINATE_CODE:
                     return
-            code = ord(code)
             idx = node + code
             node = base[idx]
             if chck[idx] == code:
