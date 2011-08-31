@@ -10,9 +10,6 @@ class Node:
     class Base:
         """ BASEノード用の定数およびメソッドが定義されているクラス """
 
-        INIT_VALUE = sys.maxint
-        """ BASEノードの初期値 """
-
         @staticmethod
         def ID(nid):
             """

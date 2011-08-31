@@ -2,7 +2,14 @@
 from igo.dictionary import Matrix, WordDic, Unknown, ViterbiNode
 import os.path
 from os.path import dirname, abspath
+import sys
 
+
+if sys.version_info[0] > 2:
+    unichr = chr
+    empty = ""
+else:
+    empty = unicode('')
 
 class Morpheme:
     """
@@ -62,7 +69,7 @@ class Tagger:
         vn = self.__parseImpl(text)
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = u''.join([unichr(x) for x in self.wdc.wordData(vn.wordId)])
+            feature = ''.join([unichr(x) for x in self.wdc.wordData(vn.wordId)])
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result

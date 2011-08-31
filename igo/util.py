@@ -4,33 +4,25 @@ import array
 import codecs
 import os
 import struct
+import sys
+
+
+LE = sys.byteorder == 'little'
+""" true if little endinan """
 
 if hasattr(os, 'fstat'):
-
     def size(f):
         return os.fstat(f.fileno()).st_size
 else:
-
     def size(f):
         return os.stat(f.name).st_size
-
-littleendian = struct.pack('@i', 1)[0] == '\x01'
-
-
-class filewrapper(file):
-    def size(self):
-        return size(self)
-
 
 class FileMappedInputStream:
     """
     ファイルにマッピングされた入力ストリーム<br />
     igo以下のモジュールではファイルからバイナリデータを取得する場合、必ずこのクラスが使用される
     """
-    INT_NATIVE = '@i'
-    INT_BIG_ENDIAN = '!i'
-    SHORT_NATIVE = '@h'
-    SHORT_BIG_ENDIAN = '!h'
+
 
     @staticmethod
     def nop(a):
@@ -49,15 +41,19 @@ class FileMappedInputStream:
         """
         if bigendian:
             self.int_fmt = '!i'
+            """ big endian int32 """
             self.short_fmt = '!h'
-            self.byteswap = self.swap if littleendian and bigendian else self.nop
+            """ big endian int16 """
+            self.byteswap = self.swap if LE and bigendian else self.nop
             self.char_encoding = 'UTF-16-BE'
         else:
-            self.int_fmt = '@i'
-            self.short_fmt = '@h'
+            self.int_fmt = '=i'
+            """ native int32 format """
+            self.short_fmt = '=h'
+            """ native int16 format """
             self.byteswap = self.nop
-            self.char_encoding = 'UTF-16-LE' if littleendian else 'UTF-16-BE'
-        self.f = filewrapper(filepath, 'rb')
+            self.char_encoding = 'UTF-16-LE' if LE else 'UTF-16-BE'
+        self.f = open(filepath, 'rb')
 
     def getInt(self):
         b = self.f.read(4)
@@ -85,7 +81,7 @@ class FileMappedInputStream:
         return codecs.getreader(self.char_encoding)(self.f).read(elementCount)
 
     def size(self):
-        return self.f.size()
+        return size(self.f)
 
     def close(self):
         self.f.close()
@@ -115,6 +111,6 @@ def getCharArrayMulti(filepaths, bigendian=False):
             ary.fromfile(f, size(f) // 2)
         finally:
             f.close()
-    if littleendian and bigendian:
+    if LE and bigendian:
         ary.byteswap()
     return ary

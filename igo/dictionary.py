@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import glob
+import sys
 import igo.util as util
 from igo.util import FileMappedInputStream
 from igo.trie import Searcher
 
+
+if sys.version_info[0] > 2:
+    space = ' '
+else:
+    space = unichr(0x20)
 
 class ViterbiNode(object):
     """
@@ -86,7 +92,7 @@ class Matrix:
         形態素同士の連接コストを求める
         """
         return self.matrix[rightId * self.rightSize + leftId]
-    
+
 
 class Unknown:
     """
@@ -95,7 +101,7 @@ class Unknown:
     def __init__(self, dataDir, bigendian=False):
         self.category = CharCategory(dataDir, bigendian)
         """文字カテゴリ管理クラス"""
-        self.spaceId = self.category.category(u' ').id  # NOTE: ' 'の文字カテゴリはSPACEに予約されている
+        self.spaceId = self.category.category(space).id  # NOTE: ' 'の文字カテゴリはSPACEに予約されている
         """文字カテゴリがSPACEの文字のID"""
 
     def search(self, text, start, wdic, result):
