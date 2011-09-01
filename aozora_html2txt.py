@@ -10,5 +10,6 @@ else:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
-r = lxml.html.parse(sys.argv[1]).getroot()
+target = sys.argv[1] if len(sys.argv) > 1 else sys.stdin
+r = lxml.html.parse(target).getroot()
 print(r.text_content())
