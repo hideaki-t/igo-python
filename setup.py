@@ -11,7 +11,7 @@ setup(
     long_description=open('README').read() + "\n\n" + open('CHANGES').read(),
     author='Hideaki Takahashi',
     author_email='mymelo@gmail.com',
-    url='https://launchpad.net/igo-python/',
+    url='https://github.com/hideaki-t/igo-python/',
     classifiers=['Development Status :: 4 - Beta',
                  'Intended Audience :: Developers',
                  'License :: OSI Approved :: MIT License',
