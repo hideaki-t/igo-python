@@ -92,7 +92,7 @@ class Matrix:
         """
         形態素同士の連接コストを求める
         """
-        return self.matrix[rightId * self.rightSize + leftId]
+        return self.matrix[rightId * self.leftSize + leftId]
 
 
 class Unknown:
