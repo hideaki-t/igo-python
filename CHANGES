@@ -27,3 +27,5 @@ Changelog for Igo-Python
 2012-02-27 -- 0.9.1
     * synchronize with Igo(java) 0.4.5
 
+2012-02-27 -- 0.9.2
+    * apply changes in Igo(java) 0.4.4
