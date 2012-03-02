@@ -94,16 +94,14 @@ class Tagger:
 
     def __parseImpl(self, text):
         length = len(text)
-        nodesAry = []
-        nodesAry.append(Tagger.__BOS_NODES)
-        for i in range(0, length):
-            nodesAry.append([])
+        nodesAry = [None] * (length + 1)
+        nodesAry[0] = Tagger.__BOS_NODES
 
         wdc = self.wdc
         unk = self.unk
         fn = MakeLattice(nodesAry, self.setMincostNode)
         for i in range(0, length):
-            if len(nodesAry[i]):
+            if nodesAry[i] != None:
                 fn.set(i)
                 wdc.search(text, i, fn)       # 単語辞書から形態素を検索
                 unk.search(text, i, wdc, fn)  # 未知語辞書から形態素を検索
@@ -148,15 +146,20 @@ class MakeLattice:
     def set(self, i):
         self.i = i
         self.prevs = self.nodesAry[i]
+        self.nodesAry[i] = None
         self.empty = True
 
     def __call__(self, vn):
         self.empty = False
-        t = self.nodesAry[self.i + vn.length]
+        nodesAry = self.nodesAry
+        end = self.i + vn.length
+        if nodesAry[end] == None:
+            nodesAry[end] = []
+        ends = nodesAry[end]
         if vn.isSpace:
-            t.extend(self.prevs)
+            ends.extend(self.prevs)
         else:
-            t.append(self.setMincostNode(vn, self.prevs))
+            ends.append(self.setMincostNode(vn, self.prevs))
 
     def isEmpty(self):
         return self.empty
