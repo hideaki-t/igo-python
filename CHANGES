@@ -1,6 +1,5 @@
 Changelog for Igo-Python
 ========================
-
 2010-11-25 -- 0.1
     * first release.
 
@@ -24,3 +23,7 @@ Changelog for Igo-Python
     * compatibility with python3.2
     * update the code base to igo-0.4.3
     * add some enhances and clean up.
+
+2012-02-27 -- 0.9.1
+    * synchronize with Igo(java) 0.4.5
+
