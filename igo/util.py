@@ -45,14 +45,14 @@ class FileMappedInputStream:
             self.short_fmt = '!h'
             """ big endian int16 """
             self.byteswap = self.swap if LE and bigendian else self.nop
-            self.char_encoding = 'UTF-16-BE'
+            self.decoder = codecs.getdecoder('UTF-16-BE')
         else:
             self.int_fmt = '=i'
             """ native int32 format """
             self.short_fmt = '=h'
             """ native int16 format """
             self.byteswap = self.nop
-            self.char_encoding = 'UTF-16-LE' if LE else 'UTF-16-BE'
+            self.decoder = codecs.getdecoder('UTF-16-LE' if LE else 'UTF-16-BE')
         self.f = open(filepath, 'rb')
 
     def getInt(self):
@@ -78,7 +78,7 @@ class FileMappedInputStream:
         return ary
 
     def getString(self, elementCount):
-        return codecs.getreader(self.char_encoding)(self.f).read(elementCount)
+        return self.decoder(self.f.read(elementCount * 2))[0]
 
     def size(self):
         return size(self.f)
