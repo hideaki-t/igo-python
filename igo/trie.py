@@ -66,13 +66,14 @@ class KeyStream:
     def compare(ks1, ks2):
         return cmp(ks1.rest(), ks2.rest())
 
-    def startsWith(self, prefix, beg, length):
+    def startsWith(self, prefix):
         cur = self.cur
         s = self.s
+        length = len(prefix)
 
         if self.len - cur < length:
             return False
-        return self.s[cur:cur + length] == prefix[beg:beg + length]
+        return s[cur:cur + length] == prefix
 
     def rest(self):
         return self.s[self.cur:]
@@ -110,7 +111,7 @@ class Searcher:
             self.base = fmis.getIntArray(nodeSz)
             self.lens = fmis.getShortArray(tindSz)
             self.chck = fmis.getCharArray(nodeSz)
-            self.tail = fmis.getString(tailSz)
+            self.tail = fmis.getShortArray(tailSz)
         finally:
             fmis.close()
 
@@ -180,11 +181,14 @@ class Searcher:
 
     def call_if_keyIncluding(self, kin, node, start, offset, fn):
         nodeId = Node.Base.ID(node)
-        if kin.startsWith(self.tail, self.begs[nodeId], self.lens[nodeId]):
-            fn(start, offset + self.lens[nodeId] + 1, nodeId)
+        l = self.lens[nodeId]
+        beg = self.begs[nodeId]
+        prefix = self.tail[beg:beg+l].tostring().decode('utf-16')
+        if kin.startsWith(prefix):
+            fn(start, offset + l + 1, nodeId)
 
     def keyExists(self, kin, node):
         nodeId = Node.Base.ID(node)
         beg = self.begs[nodeId]
-        s = self.tail.substring(beg, beg + self.lens[nodeId])
+        s = self.tail[beg:beg + self.lens[nodeId]]
         return kin.rest().equals(s)
