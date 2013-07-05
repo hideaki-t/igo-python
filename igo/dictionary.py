@@ -3,7 +3,7 @@ from __future__ import division
 import glob
 import sys
 import igo.util as util
-from igo.util import FileMappedInputStream
+from igo.util import FileMappedInputStream, getcp
 from igo.trie import Searcher
 
 
@@ -51,10 +51,10 @@ class CharCategory:
             fmis.close()
 
     def category(self, code):
-        return self.categorys[self.char2id[ord(code)]]
+        return self.categorys[self.char2id[getcp(code)]]
 
     def isCompatible(self, code1, code2):
-        return (self.eqlMasks[ord(code1)] & self.eqlMasks[ord(code2)]) != 0
+        return (self.eqlMasks[getcp(code1)] & self.eqlMasks[getcp(code2)]) != 0
 
     @staticmethod
     def readCategorys(dataDir, bigendian):

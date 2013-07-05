@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from igo.util import FileMappedInputStream
+from igo.util import FileMappedInputStream, getcp
 
 
 if sys.version_info[0] > 2:
@@ -32,10 +32,6 @@ class Node:
 
         この文字はシステムにより予約されており、辞書内の形態素の表層形および解析対象テキストに含まれていた場合の動作は未定義
         """
-        TERMINATE_CHAR = unichr(TERMINATE_CODE)
-        """
-        文字列の終端を表す文字定数
-        """
 
         VACANT_CODE = 1
         """
@@ -53,14 +49,15 @@ class Node:
 class KeyStream:
     """
     文字列を文字のストリームとして扱うためのクラス。
-    readメソッドで個々の文字を順に読み込み、文字列の終端に達した場合には{@code Node.Chck.TERMINATE_CHAR}が返される。
+    readメソッドで個々の文字を順に読み込み、文字列の終端に達した場合には{@code Node.Chck.TERMINATE_CODE}が返される。
     * XXX: クラス名は不適切
     """
 
     def __init__(self, key, start=0):
-        self.s = key
+        import array
+        self.s = array.array('H', key.encode('utf-16-le'))
         self.cur = start
-        self.len = len(key)
+        self.len = len(self.s)
 
     @staticmethod
     def compare(ks1, ks2):
@@ -80,7 +77,7 @@ class KeyStream:
 
     def read(self):
         if self.eos():
-            return Node.Chck.TERMINATE_CHAR
+            return Node.Chck.TERMINATE_CODE
         else:
             p = self.cur
             self.cur += 1
@@ -111,7 +108,7 @@ class Searcher:
             self.base = fmis.getIntArray(nodeSz)
             self.lens = fmis.getShortArray(tindSz)
             self.chck = fmis.getCharArray(nodeSz)
-            self.tail = fmis.getShortArray(tailSz)
+            self.tail = fmis.getCharArray(tailSz)
         finally:
             fmis.close()
 
@@ -163,7 +160,7 @@ class Searcher:
         kin = KeyStream(key, start)
 
         while 1:
-            code = ord(kin.read())
+            code = kin.read()
             offset += 1
             terminalIdx = node + Node.Chck.TERMINATE_CODE
             if chck[terminalIdx] == Node.Chck.TERMINATE_CODE:
@@ -183,7 +180,7 @@ class Searcher:
         nodeId = Node.Base.ID(node)
         l = self.lens[nodeId]
         beg = self.begs[nodeId]
-        prefix = self.tail[beg:beg+l].tostring().decode('utf-16')
+        prefix = self.tail[beg:beg+l]
         if kin.startsWith(prefix):
             fn(start, offset + l + 1, nodeId)
 

@@ -93,7 +93,7 @@ class Tagger:
         return result
 
     def __parseImpl(self, text):
-        length = len(text)
+        length = len(text.encode('utf-16-le'))//2
         nodesAry = [None] * (length + 1)
         nodesAry[0] = Tagger.__BOS_NODES
 
