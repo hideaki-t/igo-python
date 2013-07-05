@@ -6,9 +6,8 @@ import os
 import struct
 import sys
 
-
-LE = sys.byteorder == 'little'
-""" true if little endinan """
+LE, UTF16Codec = (True, codecs.lookup('UTF-16-LE')) \
+    if sys.byteorder == 'little' else (False, codecs.lookup('UTF-16-LE'))
 
 if hasattr(os, 'fstat'):
     def size(f):
@@ -17,12 +16,6 @@ else:
     def size(f):
         return os.stat(f.name).st_size
 
-def getcp(code):
-    cp = ord(code)
-    if cp > 65536:
-        c = code.encode('utf-16-le')
-        cp = ord(c[1]) << 8 | ord(c[0])
-    return cp
 
 class FileMappedInputStream:
     """
@@ -58,7 +51,7 @@ class FileMappedInputStream:
             self.short_fmt = '=h'
             """ native int16 format """
             self.byteswap = self.nop
-            self.decoder = codecs.getdecoder('UTF-16-LE' if LE else 'UTF-16-BE')
+            self.decoder = UTF16Codec.decode
         self.f = open(filepath, 'rb')
 
     def getInt(self):

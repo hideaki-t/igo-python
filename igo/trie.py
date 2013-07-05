@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from igo.util import FileMappedInputStream, getcp
+from igo.util import FileMappedInputStream
 
 
 if sys.version_info[0] > 2:
@@ -54,14 +54,9 @@ class KeyStream:
     """
 
     def __init__(self, key, start=0):
-        import array
-        self.s = array.array('H', key.encode('utf-16-le'))
+        self.s = key
         self.cur = start
-        self.len = len(self.s)
-
-    @staticmethod
-    def compare(ks1, ks2):
-        return cmp(ks1.rest(), ks2.rest())
+        self.len = len(key)
 
     def startsWith(self, prefix):
         cur = self.cur

@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import glob
-import sys
 import igo.util as util
-from igo.util import FileMappedInputStream, getcp
+from igo.util import FileMappedInputStream
 from igo.trie import Searcher
-
-
-if sys.version_info[0] > 2:
-    space = ' '
-else:
-    space = unichr(0x20)
 
 
 class ViterbiNode(object):
@@ -51,10 +44,10 @@ class CharCategory:
             fmis.close()
 
     def category(self, code):
-        return self.categorys[self.char2id[getcp(code)]]
+        return self.categorys[self.char2id[code]]
 
     def isCompatible(self, code1, code2):
-        return (self.eqlMasks[getcp(code1)] & self.eqlMasks[getcp(code2)]) != 0
+        return (self.eqlMasks[code1] & self.eqlMasks[code2]) != 0
 
     @staticmethod
     def readCategorys(dataDir, bigendian):
@@ -103,7 +96,7 @@ class Unknown:
         self.category = CharCategory(dataDir, bigendian)
         """文字カテゴリ管理クラス"""
         # NOTE: ' 'の文字カテゴリはSPACEに予約されている
-        self.spaceId = self.category.category(space).id
+        self.spaceId = self.category.category(0x20).id
         """文字カテゴリがSPACEの文字のID"""
 
     def search(self, text, start, wdic, callback):

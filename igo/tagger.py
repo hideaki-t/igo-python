@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 from igo.dictionary import Matrix, WordDic, Unknown, ViterbiNode
+from igo.util import UTF16Codec
 import os.path
 from os.path import dirname, abspath
-import sys
-
-
-if sys.version_info[0] > 2:
-    unichr = chr
-    empty = ""
-else:
-    empty = unicode('')
+import array
 
 
 class Morpheme:
@@ -71,7 +65,7 @@ class Tagger:
         wordData = self.wdc.wordData
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = ''.join([unichr(x) for x in wordData(vn.wordId)])
+            feature = UTF16Codec.decode(wordData(vn.wordId).tostring())[0]
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result
@@ -93,7 +87,8 @@ class Tagger:
         return result
 
     def __parseImpl(self, text):
-        length = len(text.encode('utf-16-le'))//2
+        text = array.array('H', UTF16Codec.encode(text)[0])
+        length = len(text)
         nodesAry = [None] * (length + 1)
         nodesAry[0] = Tagger.__BOS_NODES
 
@@ -101,7 +96,7 @@ class Tagger:
         unk = self.unk
         fn = MakeLattice(nodesAry, self.setMincostNode)
         for i in range(0, length):
-            if nodesAry[i] != None:
+            if nodesAry[i] is not None:
                 fn.set(i)
                 wdc.search(text, i, fn)       # 単語辞書から形態素を検索
                 unk.search(text, i, wdc, fn)  # 未知語辞書から形態素を検索
@@ -153,7 +148,7 @@ class MakeLattice:
         self.empty = False
         nodesAry = self.nodesAry
         end = self.i + vn.length
-        if nodesAry[end] == None:
+        if nodesAry[end] is None:
             nodesAry[end] = []
         ends = nodesAry[end]
         if vn.isSpace:
