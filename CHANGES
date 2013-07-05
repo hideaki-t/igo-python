@@ -29,3 +29,6 @@ Changelog for Igo-Python
 
 2012-02-27 -- 0.9.2
     * apply changes in Igo(java) 0.4.4
+
+2013-07-05 -- 0.9.3
+    * support characters in Supplementary Multilingual Plane
