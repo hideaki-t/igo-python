@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import io
 from setuptools import setup
 
 
@@ -8,7 +9,7 @@ setup(
     name='igo-python',
     version='0.9.3',
     description='Python port of Igo Japanese morphological analyzer',
-    long_description=open('README', encoding='utf-8').read() + "\n\n" + open('CHANGES', encoding='utf-8').read(),
+    long_description=io.open('README', encoding='utf-8').read() + "\n\n" + io.open('CHANGES', encoding='utf-8').read(),
     author='Hideaki Takahashi',
     author_email='mymelo@gmail.com',
     url='https://github.com/hideaki-t/igo-python/',
