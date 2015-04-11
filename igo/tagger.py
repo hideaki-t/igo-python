@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from igo.dictionary import Matrix, WordDic, Unknown, ViterbiNode
-from igo.util import UTF16Codec
+from igo.dictreader import UTF16Codec
 import os.path
 from os.path import dirname, abspath
 import array
@@ -65,7 +65,7 @@ class Tagger:
         wordData = self.wdc.wordData
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = UTF16Codec.decode(wordData(vn.wordId).tostring())[0]
+            feature = UTF16Codec.decode(wordData(vn.wordId))[0]
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result

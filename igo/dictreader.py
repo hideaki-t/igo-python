@@ -5,6 +5,13 @@ import codecs
 import os
 import struct
 import sys
+try:
+    import mmap
+    from struct import Struct
+    allow_mmap = hasattr(memoryview, 'cast')
+except:
+    allow_mmap = False
+
 
 LE, UTF16Codec = (True, codecs.lookup('UTF-16-LE')) \
     if sys.byteorder == 'little' else (False, codecs.lookup('UTF-16-LE'))
@@ -17,10 +24,9 @@ else:
         return os.stat(f.name).st_size
 
 
-class FileMappedInputStream:
+class StandardReader:
     """
-    ファイルにマッピングされた入力ストリーム<br />
-    igo以下のモジュールではファイルからバイナリデータを取得する場合、必ずこのクラスが使用される
+    reader for dictionary files using normal file io
     """
 
     @staticmethod
@@ -32,12 +38,6 @@ class FileMappedInputStream:
         a.byteswap()
 
     def __init__(self, filepath, bigendian=False):
-        """
-        入力ストリームを作成する
-
-        @param filepath マッピングするファイルのパス
-        @param bigendian big endianかどうか
-        """
         if bigendian:
             self.int_fmt = '!i'
             """ big endian int32 """
@@ -53,6 +53,12 @@ class FileMappedInputStream:
             self.byteswap = self.nop
             self.decoder = UTF16Codec.decode
         self.f = open(filepath, 'rb')
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, et, ev, t):
+        self.close()
 
     def getInt(self):
         b = self.f.read(4)
@@ -85,31 +91,89 @@ class FileMappedInputStream:
     def close(self):
         self.f.close()
 
+    def release(self):
+        self.close()
+
+
+class MMapedReader:
+    """
+    dictionary reader using mmap.
+    this only can read native datasize/byte order dictonary
+    """
+    def __init__(self, path, bigendian=False):
+        self.fd = os.open(path, os.O_RDONLY)
+        self.mmap = mmap.mmap(self.fd, length=0, prot=mmap.PROT_READ)
+        self.view = memoryview(self.mmap)
+        self.pos = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, et, ev, t):
+        self.close()
+
+    def _get(self, fmt, cnt):
+        with memoryview(self.view[self.pos:]).cast(fmt) as view:
+            # need to support endian conversion?
+            # also size of types must be native
+            self.pos += sizemap[fmt] * cnt
+            return view[:cnt]
+
+    def getInt(self):
+        v = self._get('i', 1)[0]
+        return v
+
+    def getIntArray(self, count):
+        return self._get('i', count)
+
+    def getShortArray(self, count):
+        return self._get('h', count)
+
+    def getCharArray(self, count):
+        return self._get('H', count)
+
+    def size(self):
+        return len(self.mmap)
+
+    def close(self):
+        # nothing to close, everything is mapped
+        pass
+
+    def release(self):
+        self.view.release()
+        self.mmap.close()
+        os.close(self.fd)
+
+
+if allow_mmap:
+    sizemap = {'i': 4, 'h': 2, 'H': 2}
+
+    def checksize():
+        return set(sizemap.items()) == \
+            set({x: Struct(x).size for x in 'ihH'}.items())
+
+    DictReader = MMapedReader if checksize() and LE else StandardReader
+else:
+    DictReader = StandardReader
+
 
 def getIntArray(filepath, bigendian=False):
-    fmis = FileMappedInputStream(filepath, bigendian)
-    try:
-        return fmis.getIntArray(fmis.size() // 4)
-    finally:
-        fmis.close()
+    with DictReader(filepath, bigendian) as r:
+        return r.getIntArray(r.size() // 4)
 
 
 def getCharArray(filepath, bigendian=False):
-    fmis = FileMappedInputStream(filepath, bigendian)
-    try:
-        return fmis.getCharArray(fmis.size() // 2)
-    finally:
-        fmis.close()
+    with DictReader(filepath, bigendian) as r:
+        return r.getCharArray(r.size() // 2)
 
 
+# this is only used for splitted dictionary mode
+# no mmap version provided for now
 def getCharArrayMulti(filepaths, bigendian=False):
     ary = array.array('H')
     for path in filepaths:
-        f = open(path, 'rb')
-        try:
+        with open(path, 'rb') as f:
             ary.fromfile(f, size(f) // 2)
-        finally:
-            f.close()
     if LE and bigendian:
         ary.byteswap()
     return ary

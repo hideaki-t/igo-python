@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from igo.util import FileMappedInputStream
+from igo.dictreader import DictReader
 
 
 if sys.version_info[0] > 2:
@@ -93,19 +93,16 @@ class Searcher:
         @param filepath DoubleArrayが保存されているファイルのパス
         @throws IOException filepathで示されるファイルの読み込みに失敗した場合に送出される
         """
-        fmis = FileMappedInputStream(filepath, bigendian)
-        try:
-            nodeSz = fmis.getInt()
-            tindSz = fmis.getInt()
-            tailSz = fmis.getInt()
+        with DictReader(filepath, bigendian) as r:
+            nodeSz = r.getInt()
+            tindSz = r.getInt()
+            tailSz = r.getInt()
             self.keySetSize = tindSz
-            self.begs = fmis.getIntArray(tindSz)
-            self.base = fmis.getIntArray(nodeSz)
-            self.lens = fmis.getShortArray(tindSz)
-            self.chck = fmis.getCharArray(nodeSz)
-            self.tail = fmis.getCharArray(tailSz)
-        finally:
-            fmis.close()
+            self.begs = r.getIntArray(tindSz)
+            self.base = r.getIntArray(nodeSz)
+            self.lens = r.getShortArray(tindSz)
+            self.chck = r.getCharArray(nodeSz)
+            self.tail = r.getCharArray(tailSz)
 
     def size(self):
         """

@@ -1,9 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import glob
-import igo.util as util
-from igo.util import FileMappedInputStream
+import sys
+import igo.dictreader as util
+from igo.dictreader import DictReader
 from igo.trie import Searcher
+
+if sys.version_info[0] > 2:
+    def tobytes(x):
+        return x.tobytes()
+else:
+    def tobytes(x):
+        return x.tostring()
 
 
 class ViterbiNode(object):
@@ -36,12 +44,9 @@ class ViterbiNode(object):
 class CharCategory:
     def __init__(self, dataDir, bigendian=False):
         self.categorys = CharCategory.readCategorys(dataDir, bigendian)
-        fmis = FileMappedInputStream(dataDir + "/code2category", bigendian)
-        try:
-            self.char2id = fmis.getIntArray(fmis.size() // 4 // 2)
-            self.eqlMasks = fmis.getIntArray(fmis.size() // 4 // 2)
-        finally:
-            fmis.close()
+        with DictReader(dataDir + "/code2category", bigendian) as r:
+            self.char2id = r.getIntArray(r.size() // 4 // 2)
+            self.eqlMasks = r.getIntArray(r.size() // 4 // 2)
 
     def category(self, code):
         return self.categorys[self.char2id[code]]
@@ -73,13 +78,10 @@ class Matrix:
     形態素の連接コスト表を扱うクラス
     """
     def __init__(self, dataDir, bigendian=False):
-        fmis = FileMappedInputStream(dataDir + "/matrix.bin", bigendian)
-        try:
-            self.leftSize = fmis.getInt()
-            self.rightSize = fmis.getInt()
-            self.matrix = fmis.getShortArray(self.leftSize * self.rightSize)
-        finally:
-            fmis.close()
+        with DictReader(dataDir + "/matrix.bin", bigendian) as r:
+            self.leftSize = r.getInt()
+            self.rightSize = r.getInt()
+            self.matrix = r.getShortArray(self.leftSize * self.rightSize)
 
     def linkCost(self, leftId, rightId):
         """
@@ -136,19 +138,16 @@ class WordDic:
             self.data = util.getCharArray(dataDir + "/word.dat", bigendian)
         self.indices = util.getIntArray(dataDir + "/word.ary.idx", bigendian)
 
-        fmis = FileMappedInputStream(dataDir + "/word.inf", bigendian)
-        try:
-            wordCount = fmis.size() // (4 + 2 + 2 + 2)
-            self.dataOffsets = fmis.getIntArray(wordCount)
+        with DictReader(dataDir + "/word.inf", bigendian) as r:
+            wordCount = r.size() // (4 + 2 + 2 + 2)
+            self.dataOffsets = r.getIntArray(wordCount)
             """ dataOffsets[単語ID] = 単語の素性データの開始位置 """
-            self.leftIds = fmis.getShortArray(wordCount)
+            self.leftIds = r.getShortArray(wordCount)
             """ leftIds[単語ID] = 単語の左文脈ID """
-            self.rightIds = fmis.getShortArray(wordCount)
+            self.rightIds = r.getShortArray(wordCount)
             """ rightIds[単語ID] = 単語の右文脈ID """
-            self.costs = fmis.getShortArray(wordCount)
+            self.costs = r.getShortArray(wordCount)
             """ consts[単語ID] = 単語のコスト """
-        finally:
-            fmis.close()
 
     def search(self, text, start, callback):
         costs = self.costs
@@ -174,4 +173,5 @@ class WordDic:
                                  leftIds[i], rightIds[i], isSpace))
 
     def wordData(self, wordId):
-        return self.data[self.dataOffsets[wordId]:self.dataOffsets[wordId + 1]]
+        return tobytes(
+            self.data[self.dataOffsets[wordId]:self.dataOffsets[wordId + 1]])
