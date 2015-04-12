@@ -102,7 +102,7 @@ class MMapedReader:
     """
     def __init__(self, path, bigendian=False):
         self.fd = os.open(path, os.O_RDONLY)
-        self.mmap = mmap.mmap(self.fd, length=0, prot=mmap.PROT_READ)
+        self.mmap = mmap.mmap(self.fd, length=0, access=mmap.ACCESS_READ)
         self.view = memoryview(self.mmap)
         self.pos = 0
 
