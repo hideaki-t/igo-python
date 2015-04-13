@@ -1,24 +1,19 @@
+from __future__ import unicode_literals, print_function
 import sys
 import igo
 
 
-if sys.version_info[0] < 3:
-    u = lambda s: s.decode('utf-8')
+def pp(sf, ft, st, o=sys.stdout):
+    print("%s\t%s" % (sf, ft))
+
+if sys.version_info[0] < 3 and sys.platform != 'cli':
     import codecs
-    sys.stdout = codecs.lookup('utf-8').streamwriter(sys.stdout)
-    sys.stdin = codecs.lookup('utf-8').streamreader(sys.stdin)
+    i = codecs.lookup(sys.getfilesystemencoding()).streamreader(sys.stdin)
 else:
-    import io
-    u = str
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
-
-def pp(sf, ft, st):
-    sys.stdout.write(u("%s\t%s\n") % (sf, ft))
-
+    i = sys.stdin
 
 tagger = igo.tagger.Tagger('ipadic')
 
-for l in sys.stdin:
+for l in i:
     for m in tagger.parse(l):
         pp(m.surface, m.feature, m.start)
