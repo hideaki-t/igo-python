@@ -19,6 +19,15 @@ class Morpheme:
         self.start = start
         """ テキスト内での形態素の出現開始位置 """
 
+    def __str__(self):
+        return self.fmt()
+
+    def fmt(self,
+            fmt="surface: {surface}, feature: {feature}, start={start}"):
+        return fmt.format(surface=self.surface,
+                          feature=self.feature,
+                          start=self.start)
+
 
 class Tagger:
     """
