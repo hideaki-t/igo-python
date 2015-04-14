@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from igo.dictionary import Matrix, WordDic, Unknown, ViterbiNode
-from igo.util import UTF16Codec
+from igo.dictreader import UTF16Codec
 import os.path
 from os.path import dirname, abspath
 import array
@@ -46,19 +46,17 @@ class Tagger:
             return path
         return None
 
-    def __init__(self, dataDir=None, gae=False):
+    def __init__(self, path=None, gae=False, use_mmap=None):
         """
         バイナリ辞書を読み込んで、形態素解析器のインスタンスを作成する
 
-        @param dataDir バイナリ辞書があるディレクトリ
-        @throws FileNotFoundException 間f違ったディレクトリが指定された場合に送出される
-        @throws IOException その他の入出力エラーが発生した場合に送出される
+        @param path directory of a binary dictionary
         """
-        if not dataDir:
-            dataDir = Tagger.lookup()
-        self.wdc = WordDic(dataDir, gae, gae)
-        self.unk = Unknown(dataDir, gae)
-        self.mtx = Matrix(dataDir, gae)
+        if not path:
+            path = Tagger.lookup()
+        self.wdc = WordDic(path, gae, gae, use_mmap)
+        self.unk = Unknown(path, gae, use_mmap)
+        self.mtx = Matrix(path, gae, use_mmap)
 
     def parse(self, text, result=None):
         """
@@ -74,7 +72,7 @@ class Tagger:
         wordData = self.wdc.wordData
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = UTF16Codec.decode(wordData(vn.wordId).tostring())[0]
+            feature = UTF16Codec.decode(wordData(vn.wordId))[0]
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result

@@ -1,9 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import glob
-import igo.util as util
-from igo.util import FileMappedInputStream
+import sys
+import igo.dictreader as util
+from igo.dictreader import DictReader
 from igo.trie import Searcher
+
+if sys.version_info[0] > 2:
+    def tobytes(x):
+        return x.tobytes()
+else:
+    def tobytes(x):
+        return x.tostring()
 
 
 class ViterbiNode(object):
@@ -34,30 +42,26 @@ class ViterbiNode(object):
 
 
 class CharCategory:
-    def __init__(self, dataDir, bigendian=False):
-        self.categorys = CharCategory.readCategorys(dataDir, bigendian)
-        fmis = FileMappedInputStream(dataDir + "/code2category", bigendian)
-        try:
-            self.char2id = fmis.getIntArray(fmis.size() // 4 // 2)
-            self.eqlMasks = fmis.getIntArray(fmis.size() // 4 // 2)
-        finally:
-            fmis.close()
+    def __init__(self, path, bigendian=False, use_mmap=None):
+        self.cat = CharCategory.readCategories(path, bigendian, use_mmap)
+        with DictReader(path + "/code2category", bigendian, use_mmap) as r:
+            self.char2id = r.getIntArray(r.size() // 4 // 2)
+            self.eqlMasks = r.getIntArray(r.size() // 4 // 2)
 
     def category(self, code):
-        return self.categorys[self.char2id[code]]
+        return self.cat[self.char2id[code]]
 
     def isCompatible(self, code1, code2):
         return (self.eqlMasks[code1] & self.eqlMasks[code2]) != 0
 
     @staticmethod
-    def readCategorys(dataDir, bigendian):
-        data = util.getIntArray(dataDir + "/char.category", bigendian)
-        size = len(data) // 4
-        ary = []
-        for i in range(0, size):
-            ary.append(Category(data[i * 4], data[i * 4 + 1],
-                                data[i * 4 + 2] == 1, data[i * 4 + 3] == 1))
-        return ary
+    def readCategories(path, bigendian, use_mmap):
+        with DictReader(path + "/char.category", bigendian, use_mmap) as r:
+            data = r.getIntArray()
+        size = len(data)
+        l = [Category(data[i], data[i + 1], data[i + 2] == 1, data[i + 3] == 1)
+             for i in range(0, size, 4)]
+        return l
 
 
 class Category:
@@ -72,14 +76,11 @@ class Matrix:
     """
     形態素の連接コスト表を扱うクラス
     """
-    def __init__(self, dataDir, bigendian=False):
-        fmis = FileMappedInputStream(dataDir + "/matrix.bin", bigendian)
-        try:
-            self.leftSize = fmis.getInt()
-            self.rightSize = fmis.getInt()
-            self.matrix = fmis.getShortArray(self.leftSize * self.rightSize)
-        finally:
-            fmis.close()
+    def __init__(self, path, bigendian=False, use_mmap=None):
+        with DictReader(path + "/matrix.bin", bigendian, use_mmap) as r:
+            self.leftSize = r.getInt()
+            self.rightSize = r.getInt()
+            self.matrix = r.getShortArray(self.leftSize * self.rightSize)
 
     def linkCost(self, leftId, rightId):
         """
@@ -92,8 +93,8 @@ class Unknown:
     """
     未知語の検索を行うクラス
     """
-    def __init__(self, dataDir, bigendian=False):
-        self.category = CharCategory(dataDir, bigendian)
+    def __init__(self, path, bigendian=False, use_mmap=None):
+        self.category = CharCategory(path, bigendian, use_mmap)
         """文字カテゴリ管理クラス"""
         # NOTE: ' 'の文字カテゴリはSPACEに予約されている
         self.spaceId = self.category.category(0x20).id
@@ -108,47 +109,49 @@ class Unknown:
         if not callback.isEmpty() and not ct.invoke:
             return
 
-        isSpace = ct.id == self.spaceId
+        cid = ct.id
+        isSpace = cid == self.spaceId
         limit = min(length, ct.length + start)
-        for i in range(start, limit):
-            wdic.searchFromTrieId(ct.id, start,
-                                  (i - start) + 1, isSpace, callback)
-            if i + 1 != limit and not category.isCompatible(ch, text[i + 1]):
+        for i in range(start + 1, limit):
+            wdic.searchFromTrieId(cid, start,
+                                  i - start, isSpace, callback)
+            if not category.isCompatible(ch, text[i]):
                 return
+        wdic.searchFromTrieId(cid, start,
+                              limit - start, isSpace, callback)
 
         if ct.group and limit < length:
             for i in range(limit, length):
                 if not category.isCompatible(ch, text[i]):
-                    wdic.searchFromTrieId(ct.id, start,
+                    wdic.searchFromTrieId(cid, start,
                                           i - start, isSpace, callback)
                     return
-            wdic.searchFromTrieId(ct.id, start,
+            wdic.searchFromTrieId(cid, start,
                                   length - start, isSpace, callback)
 
 
 class WordDic:
-    def __init__(self, dataDir, bigendian=False, splitted=False):
-        self.trie = Searcher(dataDir + "/word2id", bigendian)
+    def __init__(self, path, bigendian=False, splitted=False, use_mmap=None):
+        self.trie = Searcher(path + "/word2id", bigendian, use_mmap)
         if splitted:
-            paths = sorted(glob.glob(dataDir + "/word.dat.*"))
+            paths = sorted(glob.glob(path + "/word.dat.*"))
             self.data = util.getCharArrayMulti(paths, bigendian)
         else:
-            self.data = util.getCharArray(dataDir + "/word.dat", bigendian)
-        self.indices = util.getIntArray(dataDir + "/word.ary.idx", bigendian)
+            with DictReader(path + "/word.dat", bigendian, use_mmap) as r:
+                self.data = r.getCharArray()
+        with DictReader(path + "/word.ary.idx", bigendian, use_mmap) as r:
+            self.indices = r.getIntArray()
 
-        fmis = FileMappedInputStream(dataDir + "/word.inf", bigendian)
-        try:
-            wordCount = fmis.size() // (4 + 2 + 2 + 2)
-            self.dataOffsets = fmis.getIntArray(wordCount)
+        with DictReader(path + "/word.inf", bigendian, use_mmap) as r:
+            wordCount = r.size() // (4 + 2 + 2 + 2)
+            self.dataOffsets = r.getIntArray(wordCount)
             """ dataOffsets[単語ID] = 単語の素性データの開始位置 """
-            self.leftIds = fmis.getShortArray(wordCount)
+            self.leftIds = r.getShortArray(wordCount)
             """ leftIds[単語ID] = 単語の左文脈ID """
-            self.rightIds = fmis.getShortArray(wordCount)
+            self.rightIds = r.getShortArray(wordCount)
             """ rightIds[単語ID] = 単語の右文脈ID """
-            self.costs = fmis.getShortArray(wordCount)
+            self.costs = r.getShortArray(wordCount)
             """ consts[単語ID] = 単語のコスト """
-        finally:
-            fmis.close()
 
     def search(self, text, start, callback):
         costs = self.costs
@@ -174,4 +177,5 @@ class WordDic:
                                  leftIds[i], rightIds[i], isSpace))
 
     def wordData(self, wordId):
-        return self.data[self.dataOffsets[wordId]:self.dataOffsets[wordId + 1]]
+        return tobytes(
+            self.data[self.dataOffsets[wordId]:self.dataOffsets[wordId + 1]])

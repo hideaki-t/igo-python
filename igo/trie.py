@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from igo.util import FileMappedInputStream
+from igo.dictreader import DictReader
 
 
 if sys.version_info[0] > 2:
@@ -86,26 +86,23 @@ class Searcher:
     """
     DoubleArray検索用のクラス
     """
-    def __init__(self, filepath, bigendian=False):
+    def __init__(self, path, bigendian=False, use_mmap=None):
         """
-        保存されているDoubleArrayを読み込んで、このクラスのインスタンスを作成する
+        instantiate a DoubleArray Searcher
 
-        @param filepath DoubleArrayが保存されているファイルのパス
-        @throws IOException filepathで示されるファイルの読み込みに失敗した場合に送出される
+        @param filepath path of DoubleArray
+        @param mmap use mmap or not; None: depends on environment
         """
-        fmis = FileMappedInputStream(filepath, bigendian)
-        try:
-            nodeSz = fmis.getInt()
-            tindSz = fmis.getInt()
-            tailSz = fmis.getInt()
+        with DictReader(path, bigendian, use_mmap) as r:
+            nodeSz = r.getInt()
+            tindSz = r.getInt()
+            tailSz = r.getInt()
             self.keySetSize = tindSz
-            self.begs = fmis.getIntArray(tindSz)
-            self.base = fmis.getIntArray(nodeSz)
-            self.lens = fmis.getShortArray(tindSz)
-            self.chck = fmis.getCharArray(nodeSz)
-            self.tail = fmis.getCharArray(tailSz)
-        finally:
-            fmis.close()
+            self.begs = r.getIntArray(tindSz)
+            self.base = r.getIntArray(nodeSz)
+            self.lens = r.getShortArray(tindSz)
+            self.chck = r.getCharArray(nodeSz)
+            self.tail = r.getCharArray(tailSz)
 
     def size(self):
         """
