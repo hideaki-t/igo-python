@@ -42,27 +42,28 @@ class ViterbiNode(object):
 
 
 class CharCategory:
-    def __init__(self, dataDir, bigendian=False):
-        self.categorys = CharCategory.readCategorys(dataDir, bigendian)
-        with DictReader(dataDir + "/code2category", bigendian) as r:
+    def __init__(self, path, bigendian=False, use_mmap=None):
+        self.cat = CharCategory.readCategories(path, bigendian, use_mmap)
+        with DictReader(path + "/code2category", bigendian, use_mmap) as r:
             self.char2id = r.getIntArray(r.size() // 4 // 2)
             self.eqlMasks = r.getIntArray(r.size() // 4 // 2)
 
     def category(self, code):
-        return self.categorys[self.char2id[code]]
+        return self.cat[self.char2id[code]]
 
     def isCompatible(self, code1, code2):
         return (self.eqlMasks[code1] & self.eqlMasks[code2]) != 0
 
     @staticmethod
-    def readCategorys(dataDir, bigendian):
-        data = util.getIntArray(dataDir + "/char.category", bigendian)
-        size = len(data) // 4
-        ary = []
-        for i in range(0, size):
-            ary.append(Category(data[i * 4], data[i * 4 + 1],
-                                data[i * 4 + 2] == 1, data[i * 4 + 3] == 1))
-        return ary
+    def readCategories(path, bigendian, use_mmap):
+        with DictReader(path + "/char.category", bigendian, use_mmap) as r:
+            data = r.getIntArray()
+        size = len(data)
+        l = []
+        for i in range(0, size, 4):
+            l.append(Category(data[i], data[i + 1],
+                              data[i + 2] == 1, data[i + 3] == 1))
+        return l
 
 
 class Category:
@@ -77,8 +78,8 @@ class Matrix:
     """
     形態素の連接コスト表を扱うクラス
     """
-    def __init__(self, dataDir, bigendian=False):
-        with DictReader(dataDir + "/matrix.bin", bigendian) as r:
+    def __init__(self, path, bigendian=False, use_mmap=None):
+        with DictReader(path + "/matrix.bin", bigendian, use_mmap) as r:
             self.leftSize = r.getInt()
             self.rightSize = r.getInt()
             self.matrix = r.getShortArray(self.leftSize * self.rightSize)
@@ -94,8 +95,8 @@ class Unknown:
     """
     未知語の検索を行うクラス
     """
-    def __init__(self, dataDir, bigendian=False):
-        self.category = CharCategory(dataDir, bigendian)
+    def __init__(self, path, bigendian=False, use_mmap=None):
+        self.category = CharCategory(path, bigendian, use_mmap)
         """文字カテゴリ管理クラス"""
         # NOTE: ' 'の文字カテゴリはSPACEに予約されている
         self.spaceId = self.category.category(0x20).id
@@ -129,16 +130,18 @@ class Unknown:
 
 
 class WordDic:
-    def __init__(self, dataDir, bigendian=False, splitted=False):
-        self.trie = Searcher(dataDir + "/word2id", bigendian)
+    def __init__(self, path, bigendian=False, splitted=False, use_mmap=None):
+        self.trie = Searcher(path + "/word2id", bigendian, use_mmap)
         if splitted:
-            paths = sorted(glob.glob(dataDir + "/word.dat.*"))
+            paths = sorted(glob.glob(path + "/word.dat.*"))
             self.data = util.getCharArrayMulti(paths, bigendian)
         else:
-            self.data = util.getCharArray(dataDir + "/word.dat", bigendian)
-        self.indices = util.getIntArray(dataDir + "/word.ary.idx", bigendian)
+            with DictReader(path + "/word.dat", bigendian, use_mmap) as r:
+                self.data = r.getCharArray()
+        with DictReader(path + "/word.ary.idx", bigendian, use_mmap) as r:
+            self.indices = r.getIntArray()
 
-        with DictReader(dataDir + "/word.inf", bigendian) as r:
+        with DictReader(path + "/word.inf", bigendian, use_mmap) as r:
             wordCount = r.size() // (4 + 2 + 2 + 2)
             self.dataOffsets = r.getIntArray(wordCount)
             """ dataOffsets[単語ID] = 単語の素性データの開始位置 """

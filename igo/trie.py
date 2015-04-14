@@ -86,14 +86,14 @@ class Searcher:
     """
     DoubleArray検索用のクラス
     """
-    def __init__(self, filepath, bigendian=False):
+    def __init__(self, path, bigendian=False, use_mmap=None):
         """
-        保存されているDoubleArrayを読み込んで、このクラスのインスタンスを作成する
+        instantiate a DoubleArray Searcher
 
-        @param filepath DoubleArrayが保存されているファイルのパス
-        @throws IOException filepathで示されるファイルの読み込みに失敗した場合に送出される
+        @param filepath path of DoubleArray
+        @param mmap use mmap or not; None: depends on environment
         """
-        with DictReader(filepath, bigendian) as r:
+        with DictReader(path, bigendian, use_mmap) as r:
             nodeSz = r.getInt()
             tindSz = r.getInt()
             tailSz = r.getInt()

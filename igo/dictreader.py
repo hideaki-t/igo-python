@@ -5,16 +5,21 @@ import codecs
 import os
 import struct
 import sys
-try:
-    import mmap
-    from struct import Struct
-    allow_mmap = hasattr(memoryview, 'cast')
-except:
-    allow_mmap = False
-
 
 LE, UTF16Codec = (True, codecs.lookup('UTF-16-LE')) \
     if sys.byteorder == 'little' else (False, codecs.lookup('UTF-16-LE'))
+
+try:
+    import mmap
+    sizemap = {'i': 4, 'h': 2, 'H': 2}
+
+    def checksize():
+        from struct import Struct
+        return set(sizemap.items()) == \
+            set({x: Struct(x).size for x in 'ihH'}.items())
+    allow_mmap = hasattr(memoryview, 'cast') and checksize() and LE
+except:
+    allow_mmap = False
 
 if hasattr(os, 'fstat'):
     def size(f):
@@ -64,26 +69,25 @@ class StandardReader:
         b = self.f.read(4)
         return struct.unpack(self.int_fmt, b)[0]
 
-    def getIntArray(self, elementCount):
+    def getIntArray(self, count=None):
+        c = count if count is not None else (self.size() // 4)
         ary = array.array('i')
-        ary.fromfile(self.f, elementCount)
+        ary.fromfile(self.f, c)
         self.byteswap(ary)
         return ary
 
-    def getShortArray(self, elementCount):
+    def getShortArray(self, count):
         ary = array.array('h')
-        ary.fromfile(self.f, elementCount)
+        ary.fromfile(self.f, count)
         self.byteswap(ary)
         return ary
 
-    def getCharArray(self, elementCount):
+    def getCharArray(self, count=None):
+        c = count if count is not None else (self.size() // 2)
         ary = array.array('H')
-        ary.fromfile(self.f, elementCount)
+        ary.fromfile(self.f, c)
         self.byteswap(ary)
         return ary
-
-    def getString(self, elementCount):
-        return self.decoder(self.f.read(elementCount * 2))[0]
 
     def size(self):
         return size(self.f)
@@ -123,14 +127,16 @@ class MMapedReader:
         v = self._get('i', 1)[0]
         return v
 
-    def getIntArray(self, count):
-        return self._get('i', count)
+    def getIntArray(self, count=None):
+        c = count if count is not None else (self.size() // 4)
+        return self._get('i', c)
 
     def getShortArray(self, count):
         return self._get('h', count)
 
-    def getCharArray(self, count):
-        return self._get('H', count)
+    def getCharArray(self, count=None):
+        c = count if count is not None else (self.size() // 2)
+        return self._get('H', c)
 
     def size(self):
         return len(self.mmap)
@@ -145,26 +151,12 @@ class MMapedReader:
         os.close(self.fd)
 
 
-if allow_mmap:
-    sizemap = {'i': 4, 'h': 2, 'H': 2}
-
-    def checksize():
-        return set(sizemap.items()) == \
-            set({x: Struct(x).size for x in 'ihH'}.items())
-
-    DictReader = MMapedReader if checksize() and LE else StandardReader
-else:
-    DictReader = StandardReader
-
-
-def getIntArray(filepath, bigendian=False):
-    with DictReader(filepath, bigendian) as r:
-        return r.getIntArray(r.size() // 4)
-
-
-def getCharArray(filepath, bigendian=False):
-    with DictReader(filepath, bigendian) as r:
-        return r.getCharArray(r.size() // 2)
+def DictReader(f, b=False, use_mmap=None):
+    m = allow_mmap if use_mmap is None else use_mmap
+    if m:
+        return MMapedReader(f, b)
+    else:
+        return StandardReader(f, b)
 
 
 # this is only used for splitted dictionary mode
