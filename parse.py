@@ -14,3 +14,4 @@ tagger = igo.tagger.Tagger('ipadic')
 for l in i:
     for m in tagger.parse(l):
         print(m.fmt("{surface}\t{feature}"))
+    print("EOS")
