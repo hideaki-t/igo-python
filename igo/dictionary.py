@@ -59,10 +59,8 @@ class CharCategory:
         with DictReader(path + "/char.category", bigendian, use_mmap) as r:
             data = r.getIntArray()
         size = len(data)
-        l = []
-        for i in range(0, size, 4):
-            l.append(Category(data[i], data[i + 1],
-                              data[i + 2] == 1, data[i + 3] == 1))
+        l = [Category(data[i], data[i + 1], data[i + 2] == 1, data[i + 3] == 1)
+             for i in range(0, size, 4)]
         return l
 
 
@@ -111,21 +109,24 @@ class Unknown:
         if not callback.isEmpty() and not ct.invoke:
             return
 
-        isSpace = ct.id == self.spaceId
+        cid = ct.id
+        isSpace = cid == self.spaceId
         limit = min(length, ct.length + start)
-        for i in range(start, limit):
-            wdic.searchFromTrieId(ct.id, start,
-                                  (i - start) + 1, isSpace, callback)
-            if i + 1 != limit and not category.isCompatible(ch, text[i + 1]):
+        for i in range(start + 1, limit):
+            wdic.searchFromTrieId(cid, start,
+                                  i - start, isSpace, callback)
+            if not category.isCompatible(ch, text[i]):
                 return
+        wdic.searchFromTrieId(cid, start,
+                              limit - start, isSpace, callback)
 
         if ct.group and limit < length:
             for i in range(limit, length):
                 if not category.isCompatible(ch, text[i]):
-                    wdic.searchFromTrieId(ct.id, start,
+                    wdic.searchFromTrieId(cid, start,
                                           i - start, isSpace, callback)
                     return
-            wdic.searchFromTrieId(ct.id, start,
+            wdic.searchFromTrieId(cid, start,
                                   length - start, isSpace, callback)
 
 
