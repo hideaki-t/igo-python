@@ -93,7 +93,8 @@ class Searcher:
         @param filepath path of DoubleArray
         @param mmap use mmap or not; None: depends on environment
         """
-        with DictReader(path, bigendian, use_mmap) as r:
+        self.rd = DictReader(path, bigendian, use_mmap)
+        with self.rd as r:
             nodeSz = r.getInt()
             tindSz = r.getInt()
             tailSz = r.getInt()
@@ -103,6 +104,15 @@ class Searcher:
             self.lens = r.getShortArray(tindSz)
             self.chck = r.getCharArray(nodeSz)
             self.tail = r.getCharArray(tailSz)
+
+    def release(self):
+        del self.begs
+        del self.base
+        del self.lens
+        del self.chck
+        del self.tail
+        self.rd.release()
+        del self.rd
 
     def size(self):
         """

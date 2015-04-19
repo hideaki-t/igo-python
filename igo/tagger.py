@@ -136,6 +136,17 @@ class Tagger:
         vn.cost += minCost
         return vn
 
+    def release(self):
+        self.wdc.release()
+        self.unk.release()
+        self.mtx.release()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, et, ev, tb):
+        self.release()
+
 
 class MakeLattice:
     def __init__(self, nodesAry, setMincostNode):

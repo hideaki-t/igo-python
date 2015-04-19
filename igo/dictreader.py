@@ -93,7 +93,9 @@ class StandardReader:
         return size(self.f)
 
     def close(self):
-        self.f.close()
+        if self.f:
+            self.f.close()
+            self.f = None
 
     def release(self):
         self.close()
