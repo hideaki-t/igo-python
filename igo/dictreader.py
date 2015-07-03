@@ -11,12 +11,7 @@ LE, UTF16Codec = (True, codecs.lookup('UTF-16-LE')) \
 
 try:
     import mmap
-    sizemap = {'i': 4, 'h': 2, 'H': 2}
-
-    def checksize():
-        from struct import Struct
-        return set(sizemap.items()) == \
-            set({x: Struct(x).size for x in 'ihH'}.items())
+    sizemap = {t: struct.calcsize(t) for t in 'ihH'}
     allow_mmap = hasattr(memoryview, 'cast') and checksize() and LE
 except:
     allow_mmap = False
@@ -119,10 +114,11 @@ class MMapedReader:
         self.close()
 
     def _get(self, fmt, cnt):
-        with memoryview(self.view[self.pos:]).cast(fmt) as view:
+        t = self.pos + sizemap[fmt] * cnt
+        with memoryview(self.view[self.pos:t]).cast(fmt) as view:
             # need to support endian conversion?
             # also size of types must be native
-            self.pos += sizemap[fmt] * cnt
+            self.pos = t
             return view[:cnt]
 
     def getInt(self):
