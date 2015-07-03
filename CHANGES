@@ -1,5 +1,8 @@
 Changelog for Igo-Python
 ========================
+2015-07-03 -- 0.9.6
+    * fixed an issue of dictionary size in mmap mode
+
 2015-04-14 -- 0.9.5
     * use mmap to load files of a dictionary if it is possible
 
