@@ -10,6 +10,7 @@ class Morpheme:
     """
     形態素クラス
     """
+    __slots__ = ['surface', 'feature', 'start']
 
     def __init__(self, surface, feature, start):
         self.surface = surface
@@ -33,6 +34,7 @@ class Tagger:
     """
     形態素解析を行うクラス
     """
+    __slots__ = ['wdc', 'unk', 'mtx']
     __BOS_NODES = [ViterbiNode.makeBOSEOS()]
 
     @staticmethod
@@ -68,11 +70,11 @@ class Tagger:
         """
         if result is None:
             result = []
-        vn = self.__parseImpl(text)
-        wordData = self.wdc.wordData
+        vn = self.__parse(text)
+        wd = self.wdc.word_data
         while vn:
             surface = text[vn.start:vn.start + vn.length]
-            feature = UTF16Codec.decode(wordData(vn.wordId))[0]
+            feature = UTF16Codec.decode(wd(vn.word_id))[0]
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result
@@ -87,29 +89,29 @@ class Tagger:
     def wakati(self, text, result=None):
         if result is None:
             result = []
-        vn = self.__parseImpl(text)
+        vn = self.__parse(text)
         while vn:
             result.append(text[vn.start:vn.start + vn.length])
             vn = vn.prev
         return result
 
-    def __parseImpl(self, text):
+    def __parse(self, text):
         text = array.array('H', UTF16Codec.encode(text)[0])
         length = len(text)
-        nodesAry = [None] * (length + 1)
-        nodesAry[0] = Tagger.__BOS_NODES
+        nodes = [None] * (length + 1)
+        nodes[0] = Tagger.__BOS_NODES
 
         wdc = self.wdc
         unk = self.unk
-        fn = MakeLattice(nodesAry, self.setMincostNode)
+        fn = MakeLattice(nodes, self.set_mincost_node)
         for i in range(0, length):
-            if nodesAry[i] is not None:
+            if nodes[i] is not None:
                 fn.set(i)
                 wdc.search(text, i, fn)       # 単語辞書から形態素を検索
                 unk.search(text, i, wdc, fn)  # 未知語辞書から形態素を検索
 
-        cur = self.setMincostNode(ViterbiNode.makeBOSEOS(),
-                                  nodesAry[length]).prev
+        cur = self.set_mincost_node(ViterbiNode.makeBOSEOS(),
+                                    nodes[length]).prev
 
         # reverse
         head = None
@@ -120,20 +122,20 @@ class Tagger:
             cur = tmp
         return head
 
-    def setMincostNode(self, vn, prevs):
+    def set_mincost_node(self, vn, prevs):
         mtx = self.mtx
-        leftId = vn.leftId
+        left_id = vn.left_id
         f = vn.prev = prevs[0]
-        minCost = f.cost + mtx.linkCost(f.rightId, leftId)
+        mincost = f.cost + mtx.linkcost(f.right_id, left_id)
 
         for i in range(1, len(prevs)):
             p = prevs[i]
-            cost = p.cost + mtx.linkCost(p.rightId, leftId)
-            if cost < minCost:
-                minCost = cost
+            cost = p.cost + mtx.linkcost(p.right_id, left_id)
+            if cost < mincost:
+                mincost = cost
                 vn.prev = p
 
-        vn.cost += minCost
+        vn.cost += mincost
         return vn
 
     def release(self):
@@ -149,30 +151,32 @@ class Tagger:
 
 
 class MakeLattice:
-    def __init__(self, nodesAry, setMincostNode):
-        self.nodesAry = nodesAry
+    __slots__ = ['nodes', 'i', 'prevs', 'empty', 'set_mincost_node']
+
+    def __init__(self, nodes, set_mincost_node):
+        self.nodes = nodes
         self.i = 0
         self.prevs = None
         self.empty = True
-        self.setMincostNode = setMincostNode
+        self.set_mincost_node = set_mincost_node
 
     def set(self, i):
         self.i = i
-        self.prevs = self.nodesAry[i]
-        self.nodesAry[i] = None
+        self.prevs = self.nodes[i]
+        self.nodes[i] = None
         self.empty = True
 
     def __call__(self, vn):
         self.empty = False
-        nodesAry = self.nodesAry
+        nodes = self.nodes
         end = self.i + vn.length
-        if nodesAry[end] is None:
-            nodesAry[end] = []
-        ends = nodesAry[end]
-        if vn.isSpace:
+        if nodes[end] is None:
+            nodes[end] = []
+        ends = nodes[end]
+        if vn.isspace:
             ends.extend(self.prevs)
         else:
-            ends.append(self.setMincostNode(vn, self.prevs))
+            ends.append(self.set_mincost_node(vn, self.prevs))
 
-    def isEmpty(self):
+    def isempty(self):
         return self.empty

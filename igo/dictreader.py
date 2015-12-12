@@ -12,7 +12,7 @@ LE, UTF16Codec = (True, codecs.lookup('UTF-16-LE')) \
 try:
     import mmap
     sizemap = {t: struct.calcsize(t) for t in 'ihH'}
-    allow_mmap = hasattr(memoryview, 'cast') and checksize() and LE
+    allow_mmap = hasattr(memoryview, 'cast') and LE
 except:
     allow_mmap = False
 
@@ -28,6 +28,7 @@ class StandardReader:
     """
     reader for dictionary files using normal file io
     """
+    __slots__ = ['int_fmt', 'short_fmt', 'byteswap', 'decoder', 'f']
 
     @staticmethod
     def nop(a):
@@ -60,24 +61,24 @@ class StandardReader:
     def __exit__(self, et, ev, t):
         self.close()
 
-    def getInt(self):
+    def get_int(self):
         b = self.f.read(4)
         return struct.unpack(self.int_fmt, b)[0]
 
-    def getIntArray(self, count=None):
+    def get_intarray(self, count=None):
         c = count if count is not None else (self.size() // 4)
         ary = array.array('i')
         ary.fromfile(self.f, c)
         self.byteswap(ary)
         return ary
 
-    def getShortArray(self, count):
+    def get_shortarray(self, count):
         ary = array.array('h')
         ary.fromfile(self.f, count)
         self.byteswap(ary)
         return ary
 
-    def getCharArray(self, count=None):
+    def get_chararray(self, count=None):
         c = count if count is not None else (self.size() // 2)
         ary = array.array('H')
         ary.fromfile(self.f, c)
@@ -101,6 +102,8 @@ class MMapedReader:
     dictionary reader using mmap.
     this only can read native datasize/byte order dictonary
     """
+    __slots__ = ['fd', 'mmap', 'view', 'pos']
+
     def __init__(self, path, bigendian=False):
         self.fd = os.open(path, os.O_RDONLY)
         self.mmap = mmap.mmap(self.fd, length=0, access=mmap.ACCESS_READ)
@@ -121,18 +124,18 @@ class MMapedReader:
             self.pos = t
             return view[:cnt]
 
-    def getInt(self):
+    def get_int(self):
         v = self._get('i', 1)[0]
         return v
 
-    def getIntArray(self, count=None):
+    def get_intarray(self, count=None):
         c = count if count is not None else (self.size() // 4)
         return self._get('i', c)
 
-    def getShortArray(self, count):
+    def get_shortarray(self, count):
         return self._get('h', count)
 
-    def getCharArray(self, count=None):
+    def get_chararray(self, count=None):
         c = count if count is not None else (self.size() // 2)
         return self._get('H', c)
 
@@ -159,7 +162,7 @@ def DictReader(f, b=False, use_mmap=None):
 
 # this is only used for splitted dictionary mode
 # no mmap version provided for now
-def getCharArrayMulti(filepaths, bigendian=False):
+def get_chararray_multi(filepaths, bigendian=False):
     ary = array.array('H')
     for path in filepaths:
         with open(path, 'rb') as f:
