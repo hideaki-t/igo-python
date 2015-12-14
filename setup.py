@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name='igo-python',
-    version='0.9.6',
+    version='0.9.7',
     description='Python port of Igo Japanese morphological analyzer',
     long_description=io.open('README', encoding='utf-8').read() + "\n\n" + io.open('CHANGES', encoding='utf-8').read(),
     author='Hideaki Takahashi',
@@ -23,6 +23,7 @@ setup(
                  'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3.3',
                  'Programming Language :: Python :: 3.4',
+                 'Programming Language :: Python :: 3.5',
                  'Programming Language :: Python :: Implementation :: CPython',
                  'Programming Language :: Python :: Implementation :: IronPython',
                  'Programming Language :: Python :: Implementation :: PyPy',
@@ -33,4 +34,10 @@ setup(
     keywords=['japanese', 'morphological analyzer', ],
     license='MIT',
     packages=['igo'],
-    )
+    package_data={'igo': ['ipadic/*']},
+    entry_points={
+        'console_scripts': [
+            'igo = igo.parse:main'
+        ]
+    }
+)

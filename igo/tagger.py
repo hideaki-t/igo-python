@@ -43,7 +43,7 @@ class Tagger:
         モジュールが置いてある場所から辞書を探す
         @return: モジュール内で見つかった辞書のパス
         """
-        path = os.path.join(abspath(dirname(__file__)), 'dic')
+        path = os.path.join(abspath(dirname(__file__)), 'ipadic')
         if (os.path.exists(path)):
             return path
         return None
