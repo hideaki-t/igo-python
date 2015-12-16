@@ -24,19 +24,19 @@ else:
         return os.stat(f.name).st_size
 
 
+def nop(a):
+    pass
+
+
+def swap(a):
+    a.byteswap()
+
+
 class StandardReader:
     """
     reader for dictionary files using normal file io
     """
     __slots__ = ['int_fmt', 'short_fmt', 'byteswap', 'decoder', 'f']
-
-    @staticmethod
-    def nop(a):
-        pass
-
-    @staticmethod
-    def swap(a):
-        a.byteswap()
 
     def __init__(self, filepath, bigendian=False):
         if bigendian:
@@ -44,14 +44,14 @@ class StandardReader:
             """ big endian int32 """
             self.short_fmt = '!h'
             """ big endian int16 """
-            self.byteswap = self.swap if LE and bigendian else self.nop
+            self.byteswap = swap if LE and bigendian else nop
             self.decoder = codecs.getdecoder('UTF-16-BE')
         else:
             self.int_fmt = '=i'
             """ native int32 format """
             self.short_fmt = '=h'
             """ native int16 format """
-            self.byteswap = self.nop
+            self.byteswap = nop
             self.decoder = UTF16Codec.decode
         self.f = open(filepath, 'rb')
 
