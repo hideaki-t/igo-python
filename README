@@ -24,7 +24,7 @@ How To Use
 You can use Igo Python easily::
 
  >>> from igo.Tagger import Tagger
- >>> t = Tagger('ipadic')
+ >>> t = Tagger() # use bundled dictionary
  >>> for m in t.parse(u'すもももももももものうち'):
  ...     print m.surface, m.feature
  ...

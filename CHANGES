@@ -1,5 +1,8 @@
 Changelog for Igo-Python
 ========================
+2015-12-16 -- 0.9.7.1
+    * Tagger can be pickled on Python2 env
+
 2015-12-14 -- 0.9.7
     * include pre-built IPA dictionary
 
