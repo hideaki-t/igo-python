@@ -1,5 +1,8 @@
 Changelog for Igo-Python
 ========================
+2016-07-08 -- 0.9.8
+    * fixed a surrogate pair character handling issue
+
 2015-12-16 -- 0.9.7.1
     * Tagger can be pickled on Python2 env
 
