@@ -23,8 +23,7 @@ class Morpheme:
     def __str__(self):
         return self.fmt()
 
-    def fmt(self,
-            fmt="surface: {surface}, feature: {feature}, start={start}"):
+    def fmt(self, fmt="surface: {surface}, feature: {feature}, start={start}"):
         return fmt.format(surface=self.surface,
                           feature=self.feature,
                           start=self.start)
@@ -70,10 +69,11 @@ class Tagger:
         """
         if result is None:
             result = []
+        text = array.array('H', UTF16Codec.encode(text)[0])
         vn = self.__parse(text)
         wd = self.wdc.word_data
         while vn:
-            surface = text[vn.start:vn.start + vn.length]
+            surface = UTF16Codec.decode(text[vn.start:vn.start + vn.length])[0]
             feature = UTF16Codec.decode(wd(vn.word_id))[0]
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
@@ -86,17 +86,19 @@ class Tagger:
     @param result 分かち書き結果の文字列が追加されるリスト. None指定時は内部でリストを作成する
     @return 分かち書きされた文字列のリスト. {@code wakati(text,result)=result}
     """
+
     def wakati(self, text, result=None):
         if result is None:
             result = []
+        text = array.array('H', UTF16Codec.encode(text)[0])
         vn = self.__parse(text)
         while vn:
-            result.append(text[vn.start:vn.start + vn.length])
+            result.append(UTF16Codec.decode(text[vn.start:vn.start +
+                                                 vn.length])[0])
             vn = vn.prev
         return result
 
     def __parse(self, text):
-        text = array.array('H', UTF16Codec.encode(text)[0])
         length = len(text)
         nodes = [None] * (length + 1)
         nodes[0] = Tagger.__BOS_NODES
@@ -107,7 +109,7 @@ class Tagger:
         for i in range(0, length):
             if nodes[i] is not None:
                 fn.set(i)
-                wdc.search(text, i, fn)       # 単語辞書から形態素を検索
+                wdc.search(text, i, fn)  # 単語辞書から形態素を検索
                 unk.search(text, i, wdc, fn)  # 未知語辞書から形態素を検索
 
         cur = self.set_mincost_node(ViterbiNode.makeBOSEOS(),
