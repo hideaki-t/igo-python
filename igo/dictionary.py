@@ -7,9 +7,11 @@ from igo.dictreader import DictReader
 from igo.trie import Searcher
 
 if sys.version_info[0] > 2:
+
     def tobytes(x):
         return x.tobytes()
 else:
+
     def tobytes(x):
         return x.tostring()
 
@@ -18,11 +20,11 @@ class ViterbiNode(object):
     """
     Viterbiアルゴリズムで使用されるノード
     """
-    __slots__ = ['cost', 'prev', 'word_id', 'start', 'length',
-                 'left_id', 'right_id', 'isspace']
+    __slots__ = ['cost', 'prev', 'word_id', 'start', 'length', 'left_id',
+                 'right_id', 'isspace']
 
-    def __init__(self, word_id, start, length, cost,
-                 left_id, right_id, isspace):
+    def __init__(self, word_id, start, length, cost, left_id, right_id,
+                 isspace):
         self.cost = cost
         """ 始点からノードまでの総コスト """
         self.prev = None
@@ -43,6 +45,9 @@ class ViterbiNode(object):
     @staticmethod
     def makeBOSEOS():
         return ViterbiNode(0, 0, 0, 0, 0, 0, False)
+
+    def __repr__(self):
+        return str({n: getattr(self, n) for n in ViterbiNode.__slots__})
 
 
 class CharCategory:
@@ -74,7 +79,8 @@ class CharCategory:
 
     def convert_categories(self, d):
         return [
-            Category(d[i], d[i+1], d[i+2], d[i+3]) for i in range(0, len(d), 4)
+            Category(d[i], d[i + 1], d[i + 2], d[i + 3])
+            for i in range(0, len(d), 4)
         ]
 
 
@@ -141,21 +147,19 @@ class Unknown:
         isspace = cid == self.space_id
         limit = min(length, ct.length + start)
         for i in range(start + 1, limit):
-            wdic.search_from_trie(cid, start,
-                                  i - start, isspace, callback)
+            wdic.search_from_trie(cid, start, i - start, isspace, callback)
             if not category.is_compatible(ch, text[i]):
                 return
-        wdic.search_from_trie(cid, start,
-                              limit - start, isspace, callback)
+        wdic.search_from_trie(cid, start, limit - start, isspace, callback)
 
         if ct.group and limit < length:
             for i in range(limit, length):
                 if not category.is_compatible(ch, text[i]):
-                    wdic.search_from_trie(cid, start,
-                                          i - start, isspace, callback)
+                    wdic.search_from_trie(cid, start, i - start, isspace,
+                                          callback)
                     return
-            wdic.search_from_trie(cid, start,
-                                  length - start, isspace, callback)
+            wdic.search_from_trie(cid, start, length - start, isspace,
+                                  callback)
 
 
 class WordDic:
@@ -213,8 +217,8 @@ class WordDic:
         def fn(start, offset, trieId):
             end = indices[trieId + 1]
             for i in range(indices[trieId], end):
-                callback(ViterbiNode(i, start, offset, costs[i],
-                                     left_ids[i], right_ids[i], False))
+                callback(ViterbiNode(i, start, offset, costs[i], left_ids[i],
+                                     right_ids[i], False))
 
         self.trie.commonprefix_search(text, start, fn)
 
@@ -224,9 +228,9 @@ class WordDic:
         right_ids = self.right_ids
         end = self.indices[trie_id + 1]
         for i in range(self.indices[trie_id], end):
-            callback(ViterbiNode(i, start, length, costs[i],
-                                 left_ids[i], right_ids[i], isspace))
+            callback(ViterbiNode(i, start, length, costs[i], left_ids[i],
+                                 right_ids[i], isspace))
 
     def word_data(self, word_id):
-        return tobytes(
-            self.data[self.offsets[word_id]:self.offsets[word_id + 1]])
+        return tobytes(self.data[self.offsets[word_id]:self.offsets[word_id +
+                                                                    1]])
