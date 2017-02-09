@@ -5,6 +5,19 @@ import os.path
 from os.path import dirname, abspath
 import array
 
+decodeUTF16b = UTF16Codec.decode
+try:
+    UTF16Codec.decode(array.array('H', [0x3042]))
+
+    def decodeUTF16a(a):
+        return UTF16Codec.decode(a)
+except:
+    # for codec does not support an array
+    print('fallback')
+
+    def decodeUTF16a(a):
+        return UTF16Codec.decode(a.tostring())
+
 
 class Morpheme:
     """
@@ -24,9 +37,8 @@ class Morpheme:
         return self.fmt()
 
     def fmt(self, fmt="surface: {surface}, feature: {feature}, start={start}"):
-        return fmt.format(surface=self.surface,
-                          feature=self.feature,
-                          start=self.start)
+        return fmt.format(
+            surface=self.surface, feature=self.feature, start=self.start)
 
 
 class Tagger:
@@ -73,8 +85,8 @@ class Tagger:
         vn = self.__parse(text)
         wd = self.wdc.word_data
         while vn:
-            surface = UTF16Codec.decode(text[vn.start:vn.start + vn.length])[0]
-            feature = UTF16Codec.decode(wd(vn.word_id))[0]
+            surface = decodeUTF16a(text[vn.start:vn.start + vn.length])[0]
+            feature = decodeUTF16b(wd(vn.word_id))[0]
             result.append(Morpheme(surface, feature, vn.start))
             vn = vn.prev
         return result
@@ -93,8 +105,7 @@ class Tagger:
         text = array.array('H', UTF16Codec.encode(text)[0])
         vn = self.__parse(text)
         while vn:
-            result.append(UTF16Codec.decode(text[vn.start:vn.start +
-                                                 vn.length])[0])
+            result.append(decodeUTF16a(text[vn.start:vn.start + vn.length])[0])
             vn = vn.prev
         return result
 
