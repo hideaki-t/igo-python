@@ -17,9 +17,11 @@ except:
     allow_mmap = False
 
 if hasattr(os, 'fstat'):
+
     def size(f):
         return os.fstat(f.fileno()).st_size
 else:
+
     def size(f):
         return os.stat(f.name).st_size
 
@@ -117,12 +119,12 @@ class MMapedReader:
         self.close()
 
     def _get(self, fmt, cnt):
+        # need to support endian conversion?
+        # also size of types must be native
         t = self.pos + sizemap[fmt] * cnt
-        with memoryview(self.view[self.pos:t]).cast(fmt) as view:
-            # need to support endian conversion?
-            # also size of types must be native
-            self.pos = t
-            return view[:cnt]
+        view = memoryview(self.view[self.pos:t]).cast(fmt)
+        self.pos = t
+        return view
 
     def get_int(self):
         v = self._get('i', 1)[0]
