@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name='igo-python',
-    version='0.9.8',
+    version='0.9.9',
     description='Python port of Igo Japanese morphological analyzer',
     long_description=io.open('README', encoding='utf-8').read() + "\n\n" +
     io.open('CHANGES', encoding='utf-8').read(),
@@ -25,6 +25,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: IronPython',
         'Programming Language :: Python :: Implementation :: PyPy',
