@@ -1,5 +1,8 @@
 Changelog for Igo-Python
 ========================
+2017-02-09 -- 0.9.9
+    * fixed few small issues and add unit test.
+
 2016-07-08 -- 0.9.8
     * fixed a surrogate pair character handling issue
 
