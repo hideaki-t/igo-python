@@ -10,4 +10,4 @@ build: false
 
 test_script:
   - SET PYTHONIOENCODING=utf-8
-  - tox -e py33,py34,py35,py36
+  - tox -e py27,py33,py34,py35,py36
