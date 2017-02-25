@@ -1,0 +1,29 @@
+cache:
+  - '%LOCALAPPDATA%\pip\Cache'
+
+environment:
+  matrix:
+    - PYTHON: C:\Python36-x64
+      ARCH: x64
+    - PYTHON: C:\Python35-x64
+      ARCH: x64
+    - PYTHON: C:\Python34-x64
+      ARCH: x64
+    - PYTHON: C:\Python33-x64
+      ARCH: x64
+    - PYTHON: C:\Python27-x64
+      ARCH: x64
+
+init:
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+
+install:
+  - python -m pip install -U pip
+  - python -m pip install tox
+  - python -m pip install -e .
+
+build: false
+
+test_script:
+  - SET PYTHONIOENCODING=utf-8
+  - tox -e py33,py34,py35,py36
