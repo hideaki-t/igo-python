@@ -1,5 +1,8 @@
 Changelog for Igo-Python
 ========================
+2018-09-22 -- 1.0.0
+    * dropped Python 3.3 from supported Python version.
+
 2017-02-09 -- 0.9.9
     * fixed few small issues and add unit test.
 

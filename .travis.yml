@@ -3,7 +3,6 @@ language: python
 matrix:
   include:
     - python: "2.7"
-    - python: "3.3"
     - python: "3.4"
     - python: "3.5"
     - python: "3.6"
@@ -13,6 +12,5 @@ matrix:
     - python: "pypy"
     - python: "pypy3"
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.3 ]]; then pip install virtualenv==15.2.0; fi
   - pip install tox-travis
 script: tox
